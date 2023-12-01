@@ -35,10 +35,10 @@ pub fn part2() -> usize {
                 ];
                 NUMS.iter()
                     .enumerate()
-                    .find(|(_, &(n1, n2))| s.contains(n1) || s.contains(n2))
+                    .find(|(_, &(n1, n2))| s.starts_with(n1) || s.starts_with(n2))
                     .map(|(i, _)| i + 1)
             }
-            let n1 = (0..l.len()).find_map(|n| num(&l[..=n])).unwrap();
+            let n1 = (0..l.len()).find_map(|n| num(&l[n..])).unwrap();
             let n2 = (0..=l.len()).rev().find_map(|n| num(&l[n..])).unwrap();
             n1 * 10 + n2
         })

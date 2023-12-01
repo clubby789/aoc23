@@ -5,11 +5,11 @@ pub fn part1() -> usize {
         .lines()
         .map(|l| {
             (
-                l.find(|c: char| c.is_ascii_digit())
-                    .map(|i| l.as_bytes()[i] - b'0')
+                l.as_bytes().iter().find(|b| b.is_ascii_digit())
+                    .map(|i| i - b'0')
                     .unwrap(),
-                l.rfind(|c: char| c.is_ascii_digit())
-                    .map(|i| l.as_bytes()[i] - b'0')
+                l.as_bytes().iter().rev().find(|b| b.is_ascii_digit())
+                    .map(|i| i - b'0')
                     .unwrap(),
             )
         })

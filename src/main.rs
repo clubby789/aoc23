@@ -7,10 +7,15 @@ seq!(N in 1..=2 {
 
 fn timeit<F, U>(f: F) -> (Duration, U)
 where
-    F: FnOnce() -> U,
+    F: Fn() -> U,
 {
+    // warm up
     let now = Instant::now();
-    let ret = f();
+    while now.elapsed() < Duration::from_secs(2) {
+        std::hint::black_box(f());
+    }
+    let now = Instant::now();
+    let ret = std::hint::black_box(f());
     (now.elapsed(), ret)
 }
 

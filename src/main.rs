@@ -19,9 +19,25 @@ where
     (now.elapsed(), ret)
 }
 
+seq! {
+    N in 1..=2 {
+        static FUNCS: &[(fn() -> usize, fn() -> usize)] = &[
+            #(
+                (day~N::part1 as _, day~N::part2 as _),
+            )*
+        ];
+    }
+}
+
 fn main() {
-    let (t1, res) = timeit(day2::part1);
-    println!("Solved part 1 in {t1:?} - {res}");
-    let (t2, res) = timeit(day2::part2);
-    println!("Solved part 2 in {t2:?} - {res}");
+    let (f1, f2) = FUNCS.last().unwrap();
+    if std::env::var("TIMEIT").is_ok() {
+        let (t1, res) = timeit(f1);
+        println!("Solved part 1 in {t1:?} - {res}");
+        let (t2, res) = timeit(f2);
+        println!("Solved part 2 in {t2:?} - {res}");
+    } else {
+        println!("Part 1 - {}", f1());
+        println!("Part 2 - {}", f2());
+    }
 }

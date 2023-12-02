@@ -18,30 +18,30 @@ fn pulls_for_game(game: &str, num: usize) -> &str {
     match num {
         0..=9 => &game[8..],
         10..=99 => &game[9..],
-        100.. => &game[10..]
+        100.. => &game[10..],
     }
 }
 
 pub fn part1() -> usize {
-    let mut sum = 0;
-    'games: for (i, game) in INPUT.lines().enumerate() {
-        let pulls = pulls_for_game(game, i + 1);
-        for (r, g, b) in Pulls::new(pulls) {
-            if r > 12 || g > 13 || b > 14 {
-                continue 'games;
-            }
-        }
-        sum += i + 1;
-    }
-    sum
+    INPUT
+        .lines()
+        .enumerate()
+        .filter(|&(i, s)| {
+            Pulls::new(pulls_for_game(s, i + 1)).all(|(r, g, b)| r <= 12 && g <= 13 && b <= 14)
+        })
+        .map(|(i, _)| i + 1)
+        .sum()
 }
+
 pub fn part2() -> usize {
-    let mut sum = 0;
-    for (i, game) in INPUT.lines().enumerate() {
-        let (red, green, blue) = min_num_cubes(game, i + 1);
-        sum += red as usize * green as usize * blue as usize
-    }
-    sum
+    INPUT
+        .lines()
+        .enumerate()
+        .map(|(i, game)| {
+            let (r, g, b) = min_num_cubes(game, i + 1);
+            r as usize * g as usize * b as usize
+        })
+        .sum()
 }
 
 struct Pulls<'a> {
@@ -54,7 +54,7 @@ impl<'a> Pulls<'a> {
     fn new(src: &'a str) -> Self {
         Self {
             src: src.as_bytes(),
-            pos: 0
+            pos: 0,
         }
     }
 }
@@ -94,7 +94,7 @@ impl<'a> Iterator for Pulls<'a> {
                     blue = n;
                     self.pos += 4;
                 }
-                _ => unreachable!()
+                _ => unreachable!(),
             }
             match self.src.get(self.pos) {
                 Some(b',') => {

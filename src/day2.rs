@@ -25,15 +25,10 @@ pub fn part2() -> usize {
         .lines()
         .enumerate()
         .map(|(i, game)| {
-            let pulls = skip_game(game, i + 1);
-            let mut red = 0;
-            let mut green = 0;
-            let mut blue = 0;
-            for (r, g, b) in Pulls::new(pulls) {
-                red = red.max(r);
-                green = green.max(g);
-                blue = blue.max(b);
-            }
+            let (red, green, blue) = Pulls::new(skip_game(game, i + 1))
+                .fold((0, 0, 0), |(r, g, b), (red, green, blue)| {
+                    (r.max(red), g.max(green), b.max(blue))
+                });
             red as usize * green as usize * blue as usize
         })
         .sum()

@@ -10,10 +10,10 @@ fn min_num_cubes(game: &str) -> (u8, u8, u8) {
         for cube in pull.split(", ") {
             let (n, col) = cube.split_once(" ").unwrap();
             let n: u8 = n.parse().unwrap();
-            match col {
-                "red" => red = red.max(n),
-                "blue" => blue = blue.max(n),
-                "green" => green = green.max(n),
+            match col.as_bytes()[0] {
+                b'r' => red = red.max(n),
+                b'g' => blue = blue.max(n),
+                b'b' => green = green.max(n),
                 _ => ()
             }
         }
@@ -23,11 +23,21 @@ fn min_num_cubes(game: &str) -> (u8, u8, u8) {
 
 pub fn part1() -> usize {
     let mut sum = 0;
-    for (i, game) in INPUT.lines().enumerate() {
-        let (red, green, blue) = min_num_cubes(game);
-        if red <= 12 && green <= 13 && blue <= 14 {
-            sum += i + 1;
+    'games: for (i, game) in INPUT.lines().enumerate() {
+        let pulls = game.split_once(": ").unwrap().1;
+        for pull in pulls.split("; ") {
+            for cube in pull.split(", ") {
+                let (n, col) = cube.split_once(" ").unwrap();
+                let n: u8 = n.parse().unwrap();
+                match col.as_bytes()[0] {
+                    b'r' if n > 12 => continue 'games,
+                    b'g' if n > 13 => continue 'games,
+                    b'b' if n > 14 => continue 'games,
+                    _ => ()
+                }
+            }
         }
+        sum += i + 1;
     }
     sum
 }

@@ -1,6 +1,7 @@
 use seq_macro::seq;
 use std::time::{Duration, Instant};
-seq!(N in 1..=1 {
+seq!(N in 1..=2 {
+    #[allow(unused)]
     mod day~N;
 });
 
@@ -14,8 +15,8 @@ where
 }
 
 fn main() {
-    let (t1, res) = timeit(day1::part1);
+    let (t1, res) = timeit(day2::part1);
     println!("Solved part 1 in {t1:?} - {res}");
-    let (t2, res) = timeit(day1::part2);
+    let (t2, res) = timeit(day2::part2);
     println!("Solved part 2 in {t2:?} - {res}");
 }

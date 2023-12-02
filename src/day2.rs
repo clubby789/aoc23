@@ -1,11 +1,11 @@
 const INPUT: &str = include_str!("inputs/2.txt");
 
 // Given a single game, find the minimum number of cubes that must have been in the bag
-fn min_num_cubes(game: &str) -> (u8, u8, u8) {
+fn min_num_cubes(game: &str, num: usize) -> (u8, u8, u8) {
     let mut red = 0;
     let mut green = 0;
     let mut blue = 0;
-    let pulls = game.split_once(": ").unwrap().1;
+    let pulls = pulls_for_game(game, num);
     for (r, g, b) in Pulls::new(pulls) {
         red = red.max(r);
         green = green.max(g);
@@ -14,10 +14,18 @@ fn min_num_cubes(game: &str) -> (u8, u8, u8) {
     (red, green, blue)
 }
 
+fn pulls_for_game(game: &str, num: usize) -> &str {
+    match num {
+        0..=9 => &game[8..],
+        10..=99 => &game[9..],
+        100.. => &game[10..]
+    }
+}
+
 pub fn part1() -> usize {
     let mut sum = 0;
     'games: for (i, game) in INPUT.lines().enumerate() {
-        let pulls = game.split_once(": ").unwrap().1;
+        let pulls = pulls_for_game(game, i + 1);
         for (r, g, b) in Pulls::new(pulls) {
             if r > 12 || g > 13 || b > 14 {
                 continue 'games;
@@ -29,8 +37,8 @@ pub fn part1() -> usize {
 }
 pub fn part2() -> usize {
     let mut sum = 0;
-    for game in INPUT.lines() {
-        let (red, green, blue) = min_num_cubes(game);
+    for (i, game) in INPUT.lines().enumerate() {
+        let (red, green, blue) = min_num_cubes(game, i + 1);
         sum += red as usize * green as usize * blue as usize
     }
     sum

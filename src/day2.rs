@@ -1,20 +1,7 @@
 const INPUT: &str = include_str!("inputs/2.txt");
 
-// Given a single game, find the minimum number of cubes that must have been in the bag
-fn min_num_cubes(game: &str, num: usize) -> (u8, u8, u8) {
-    let mut red = 0;
-    let mut green = 0;
-    let mut blue = 0;
-    let pulls = pulls_for_game(game, num);
-    for (r, g, b) in Pulls::new(pulls) {
-        red = red.max(r);
-        green = green.max(g);
-        blue = blue.max(b);
-    }
-    (red, green, blue)
-}
-
-fn pulls_for_game(game: &str, num: usize) -> &str {
+// Removes the 'Game x: ' prefix from a line
+fn skip_game(game: &str, num: usize) -> &str {
     match num {
         0..=9 => &game[8..],
         10..=99 => &game[9..],
@@ -27,7 +14,7 @@ pub fn part1() -> usize {
         .lines()
         .enumerate()
         .filter(|&(i, s)| {
-            Pulls::new(pulls_for_game(s, i + 1)).all(|(r, g, b)| r <= 12 && g <= 13 && b <= 14)
+            Pulls::new(skip_game(s, i + 1)).all(|(r, g, b)| r <= 12 && g <= 13 && b <= 14)
         })
         .map(|(i, _)| i + 1)
         .sum()
@@ -38,8 +25,16 @@ pub fn part2() -> usize {
         .lines()
         .enumerate()
         .map(|(i, game)| {
-            let (r, g, b) = min_num_cubes(game, i + 1);
-            r as usize * g as usize * b as usize
+            let pulls = skip_game(game, i + 1);
+            let mut red = 0;
+            let mut green = 0;
+            let mut blue = 0;
+            for (r, g, b) in Pulls::new(pulls) {
+                red = red.max(r);
+                green = green.max(g);
+                blue = blue.max(b);
+            }
+            red as usize * green as usize * blue as usize
         })
         .sum()
 }

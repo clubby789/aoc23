@@ -110,8 +110,7 @@ impl<'a> GridIter<'a> {
 
     fn parse_number(&mut self) -> NonZeroU32 {
         let mut n = (self.src[self.pos] - b'0') as u32;
-        self.pos += 1;
-        while let Some(b) = self.src.get(self.pos) {
+        while let Some(b) = self.src.get(self.pos + 1) {
             if b.is_ascii_digit() {
                 n = n * 10 + (b - b'0') as u32;
                 self.pos += 1;
@@ -126,8 +125,9 @@ impl<'a> GridIter<'a> {
 impl<'a> Iterator for GridIter<'a> {
     type Item = GridItem;
     fn next(&mut self) -> Option<Self::Item> {
-        loop {
-            match self.src.get(self.pos)? {
+        let (kind, current_pos) = loop {
+            let cur = self.pos;
+            match self.src.get(cur)? {
                 b'\n' => {
                     self.pos += 1;
                     self.width
@@ -136,28 +136,12 @@ impl<'a> Iterator for GridIter<'a> {
                 b'.' => {
                     self.pos += 1;
                 }
-                _ => break,
-            }
-        }
-        while matches!(self.src.get(self.pos)?, b'\n' | b'.') {
-            self.pos += 1;
-        }
-        let mut c = *self.src.get(self.pos)?;
-        if c == b'\n' {
-            self.pos += 1;
-            // This will only set the width the first time
-            self.width
-                .get_or_insert(NonZeroUsize::new(self.pos).unwrap());
-            c = *self.src.get(self.pos)?;
-        }
-        let current_pos = self.pos;
-        let kind = match c {
-            b'0'..=b'9' => ItemKind::Number(self.parse_number()),
-            s => {
-                self.pos += 1;
-                ItemKind::Symbol(s)
+                b'0'..=b'9' => break (ItemKind::Number(self.parse_number()), cur),
+                c => break (ItemKind::Symbol(*c), cur),
             }
         };
+        // println!("{kind:#?}");
+        self.pos += 1;
         let pos = if let Some(w) = self.width {
             (current_pos % w.get(), current_pos / w.get())
         } else {

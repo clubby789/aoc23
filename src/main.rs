@@ -9,14 +9,20 @@ fn timeit<F, U>(f: F) -> (Duration, U)
 where
     F: Fn() -> U,
 {
-    // warm up
+    // warm up for 2s
     let now = Instant::now();
     while now.elapsed() < Duration::from_secs(2) {
         std::hint::black_box(f());
     }
     let now = Instant::now();
+    let mut iters = 0;
+    while now.elapsed() < Duration::from_secs(2) {
+        std::hint::black_box(f());
+        iters += 1;
+    }
+    let avg = now.elapsed() / iters;
     let ret = std::hint::black_box(f());
-    (now.elapsed(), ret)
+    (avg, ret)
 }
 
 seq! {

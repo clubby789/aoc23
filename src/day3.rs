@@ -134,24 +134,25 @@ impl<'a> GridWalker<'a> {
     /// Return false if we reached the end of the input instead
     pub fn walk_until_number(&mut self) -> bool {
         loop {
-            if self.pos >= self.grid.len() {
-                return false;
+            match self.grid.get(self.pos) {
+                Some(b'1'..=b'9') => return true,
+                None => return false,
+                _ => self.pos += 1
             }
-            if matches!(self.grid[self.pos], b'1'..=b'9') {
-                return true;
-            }
-            self.step();
         }
     }
 
+    #[inline(always)]
     pub fn cur(&self) -> u8 {
         self.grid[self.pos]
     }
 
+    #[inline(always)]
     pub fn next(&self) -> Option<u8> {
         self.grid.get(self.pos + 1).copied()
     }
 
+    #[inline(always)]
     pub fn step(&mut self) {
         self.pos += 1;
     }

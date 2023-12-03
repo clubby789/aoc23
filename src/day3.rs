@@ -5,31 +5,26 @@ const INPUT: &str = include_str!("inputs/3.txt");
 pub fn part1() -> usize {
     let mut sum = 0;
     let mut walker = GridWalker::new(INPUT);
-    while walker.walk_until_number() {
-        let n = {
-            let mut adj_symbol = false;
-            let mut n = (walker.cur() - b'0') as usize;
-            adj_symbol |= walker.left().0 != b'.'
-                || walker.up_left().0 != b'.'
-                || walker.down_left().0 != b'.'
-                || walker.up().0 != b'.'
-                || walker.down().0 != b'.';
-            while let Some(nx @ b'0'..=b'9') = walker.next() {
-                n = n * 10 + (nx - b'0') as usize;
-                walker.step();
-                adj_symbol |= walker.up().0 != b'.' || walker.down().0 != b'.';
-            }
-            adj_symbol |= walker.right().0 != b'.'
-                || walker.up_right().0 != b'.'
-                || walker.down_right().0 != b'.';
+    while let Some(n) = walker.walk_until_number() {
+        let mut n = n as usize;
+        let mut adj_symbol = false;
+        adj_symbol |= walker.left().0 != b'.'
+            || walker.up_left().0 != b'.'
+            || walker.down_left().0 != b'.'
+            || walker.up().0 != b'.'
+            || walker.down().0 != b'.';
+        while let Some(nx @ b'0'..=b'9') = walker.next() {
+            n = n * 10 + (nx - b'0') as usize;
             walker.step();
-            if adj_symbol {
-                n
-            } else {
-                0
-            }
-        };
-        sum += n;
+            adj_symbol |= walker.up().0 != b'.' || walker.down().0 != b'.';
+        }
+        adj_symbol |= walker.right().0 != b'.'
+            || walker.up_right().0 != b'.'
+            || walker.down_right().0 != b'.';
+        walker.step();
+        if adj_symbol {
+            sum += n;
+        }
     }
     sum
 }
@@ -82,9 +77,9 @@ pub fn part2() -> usize {
     }
 
     let mut walker = GridWalker::new(INPUT);
-    while walker.walk_until_number() {
+    while let Some(n) = walker.walk_until_number() {
         let mut adj_star = None;
-        let mut n = (walker.cur() - b'0') as usize;
+        let mut n = n as usize;
         adj_star = pos_if_star(walker.left())
             .or_else(|| pos_if_star(walker.up_left()))
             .or_else(|| pos_if_star(walker.down_left()))
@@ -130,14 +125,14 @@ impl<'a> GridWalker<'a> {
         }
     }
 
-    /// Walk forward until `pos` is at a digit.
-    /// Return false if we reached the end of the input instead
-    pub fn walk_until_number(&mut self) -> bool {
+    /// Walk forward until `pos` is at a digit and return it
+    /// Return None if we reached the end of the input instead
+    pub fn walk_until_number(&mut self) -> Option<u8> {
         loop {
             match self.grid.get(self.pos) {
-                Some(b'1'..=b'9') => return true,
-                None => return false,
-                _ => self.pos += 1
+                Some(c @ b'1'..=b'9') => return Some(*c - b'0'),
+                None => return None,
+                _ => self.pos += 1,
             }
         }
     }

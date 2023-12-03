@@ -1,113 +1,28 @@
 use rustc_hash::FxHashMap;
-use std::cell::Cell;
 
 const INPUT: &str = include_str!("inputs/3.txt");
 
 pub fn part1() -> usize {
     let mut sum = 0;
-    let mut pos = Cell::new(0);
-    let grid = INPUT.as_bytes();
-    let width = INPUT.find('\n').unwrap();
-
-    'outer: loop {
-        // advance until digits or end of file
-        loop {
-            if let Some(&cur) = grid.get(pos.get()) {
-                if cur > b'0' && cur <= b'9' {
-                    break;
-                } else {
-                    pos.set(pos.get() + 1)
-                }
-            } else {
-                break 'outer;
-            }
-        }
-        let on_left_edge =
-            || pos.get() == 0 || matches!(grid.get(pos.get() - 1), Some(b'\n') | None);
-
-        let on_right_edge = || matches!(grid.get(pos.get() + 1), Some(b'\n') | None);
-
-        let on_top = || pos.get() < width;
-
-        let on_bottom = || grid.len() - pos.get() <= width;
-
-        // closures to check if there is a symbol in the given position
-        // minus and plus one where necessary to bypass newlines
-        let up_left = || {
-            if on_left_edge() || on_top() {
-                false
-            } else {
-                grid[pos.get() - 1 - width - 1] != b'.'
-            }
-        };
-
-        let up = || {
-            if on_top() {
-                false
-            } else {
-                grid[pos.get() - width - 1] != b'.'
-            }
-        };
-
-        let up_right = || {
-            if on_right_edge() || on_top() {
-                false
-            } else {
-                grid[pos.get() + 1 - width - 1] != b'.'
-            }
-        };
-
-        let left = || {
-            if on_left_edge() {
-                false
-            } else {
-                grid[pos.get() - 1] != b'.'
-            }
-        };
-
-        let right = || {
-            if on_right_edge() {
-                false
-            } else {
-                grid[pos.get() + 1] != b'.'
-            }
-        };
-
-        let down_left = || {
-            if on_left_edge() || on_bottom() {
-                false
-            } else {
-                grid[pos.get() - 1 + width + 1] != b'.'
-            }
-        };
-
-        let down = || {
-            if on_bottom() {
-                false
-            } else {
-                grid[pos.get() + width + 1] != b'.'
-            }
-        };
-
-        let down_right = || {
-            if on_right_edge() || on_bottom() {
-                false
-            } else {
-                grid[pos.get() + 1 + width + 1] != b'.'
-            }
-        };
-
+    let mut walker = GridWalker::new(INPUT);
+    while walker.walk_until_number() {
         let n = {
             let mut adj_symbol = false;
-            let mut n = (grid[pos.get()] - b'0') as usize;
-            adj_symbol |= left() || up_left() || down_left() || up() || down();
-            while pos.get() < grid.len() - 1 && matches!(grid[pos.get() + 1], b'0'..=b'9') {
-                n = n * 10 + (grid[pos.get() + 1] - b'0') as usize;
-                pos.set(pos.get() + 1);
-                adj_symbol |= up() || down();
+            let mut n = (walker.cur() - b'0') as usize;
+            adj_symbol |= walker.left().0 != b'.'
+                || walker.up_left().0 != b'.'
+                || walker.down_left().0 != b'.'
+                || walker.up().0 != b'.'
+                || walker.down().0 != b'.';
+            while let Some(nx @ b'0'..=b'9') = walker.next() {
+                n = n * 10 + (nx - b'0') as usize;
+                walker.step();
+                adj_symbol |= walker.up().0 != b'.' || walker.down().0 != b'.';
             }
-            adj_symbol |= right() || up_right() || down_right();
-            pos.set(pos.get() + 1);
+            adj_symbol |= walker.right().0 != b'.'
+                || walker.up_right().0 != b'.'
+                || walker.down_right().0 != b'.';
+            walker.step();
             if adj_symbol {
                 n
             } else {
@@ -155,154 +70,38 @@ impl<const N: usize, T> SmallList<N, T> {
 }
 
 pub fn part2() -> usize {
-    let mut pos = Cell::new(0);
-    let grid = INPUT.as_bytes();
-    let width = INPUT.find('\n').unwrap();
     let mut gears: FxHashMap<usize, SmallList<2, usize>> =
         FxHashMap::with_capacity_and_hasher(50, Default::default());
 
-    'outer: loop {
-        // advance until digits or end of file
-        loop {
-            if let Some(&cur) = grid.get(pos.get()) {
-                if cur > b'0' && cur <= b'9' {
-                    break;
-                } else {
-                    pos.set(pos.get() + 1)
-                }
-            } else {
-                break 'outer;
-            }
+    fn pos_if_star(inp: (u8, Option<usize>)) -> Option<usize> {
+        if inp.0 == b'*' {
+            inp.1
+        } else {
+            None
         }
-        let on_left_edge =
-            || pos.get() == 0 || matches!(grid.get(pos.get() - 1), Some(b'\n') | None);
+    }
 
-        let on_right_edge = || matches!(grid.get(pos.get() + 1), Some(b'\n') | None);
-
-        let on_top = || pos.get() < width;
-
-        let on_bottom = || grid.len() - pos.get() <= width;
-
-        // closures to check if there is a star in the given position
-        // minus and plus one where necessary to bypass newlines
-        let up_left = || {
-            if on_left_edge() || on_top() {
-                None
-            } else {
-                let p = pos.get() - 1 - width - 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let up = || {
-            if on_top() {
-                None
-            } else {
-                let p = pos.get() - width - 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let up_right = || {
-            if on_right_edge() || on_top() {
-                None
-            } else {
-                let p = pos.get() + 1 - width - 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let left = || {
-            if on_left_edge() {
-                None
-            } else {
-                let p = pos.get() - 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let right = || {
-            if on_right_edge() {
-                None
-            } else {
-                let p = pos.get() + 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let down_left = || {
-            if on_left_edge() || on_bottom() {
-                None
-            } else {
-                let p = pos.get() - 1 + width + 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let down = || {
-            if on_bottom() {
-                None
-            } else {
-                let p = pos.get() + width + 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
-        let down_right = || {
-            if on_right_edge() || on_bottom() {
-                None
-            } else {
-                let p = pos.get() + 1 + width + 1;
-                if grid[p] == b'*' {
-                    Some(p)
-                } else {
-                    None
-                }
-            }
-        };
-
+    let mut walker = GridWalker::new(INPUT);
+    while walker.walk_until_number() {
         let mut adj_star = None;
-        let mut n = (grid[pos.get()] - b'0') as usize;
-        adj_star = left()
-            .or_else(up_left)
-            .or_else(down_left)
-            .or_else(up)
-            .or_else(down);
-        while pos.get() < grid.len() - 1 && matches!(grid[pos.get() + 1], b'0'..=b'9') {
-            n = n * 10 + (grid[pos.get() + 1] - b'0') as usize;
-            pos.set(pos.get() + 1);
-            adj_star = adj_star.or_else(|| up().or_else(down));
+        let mut n = (walker.cur() - b'0') as usize;
+        adj_star = pos_if_star(walker.left())
+            .or_else(|| pos_if_star(walker.up_left()))
+            .or_else(|| pos_if_star(walker.down_left()))
+            .or_else(|| pos_if_star(walker.up()))
+            .or_else(|| pos_if_star(walker.down()));
+        while let Some(nx @ b'0'..=b'9') = walker.next() {
+            n = n * 10 + (nx - b'0') as usize;
+            walker.step();
+            adj_star = adj_star
+                .or_else(|| pos_if_star(walker.up()).or_else(|| pos_if_star(walker.down())));
         }
-        adj_star = adj_star.or_else(|| right().or_else(up_right).or_else(down_right));
-        pos.set(pos.get() + 1);
+        adj_star = adj_star.or_else(|| {
+            pos_if_star(walker.right())
+                .or_else(|| pos_if_star(walker.up_right()))
+                .or_else(|| pos_if_star(walker.down_right()))
+        });
+        walker.step();
         if let Some(pos) = adj_star {
             gears.entry(pos).or_default().insert(n)
         }
@@ -314,4 +113,135 @@ pub fn part2() -> usize {
             _ => None,
         })
         .sum()
+}
+
+struct GridWalker<'a> {
+    grid: &'a [u8],
+    pos: usize,
+    width: usize,
+}
+
+impl<'a> GridWalker<'a> {
+    pub fn new(src: &'a str) -> Self {
+        Self {
+            grid: src.as_bytes(),
+            pos: 0,
+            width: src.as_bytes().iter().position(|b| *b == b'\n').unwrap(),
+        }
+    }
+
+    /// Walk forward until `pos` is at a digit.
+    /// Return false if we reached the end of the input instead
+    pub fn walk_until_number(&mut self) -> bool {
+        loop {
+            if self.pos >= self.grid.len() {
+                return false;
+            }
+            if matches!(self.grid[self.pos], b'1'..=b'9') {
+                return true;
+            }
+            self.step();
+        }
+    }
+
+    pub fn cur(&self) -> u8 {
+        self.grid[self.pos]
+    }
+
+    pub fn next(&self) -> Option<u8> {
+        self.grid.get(self.pos + 1).copied()
+    }
+
+    pub fn step(&mut self) {
+        self.pos += 1;
+    }
+
+    fn on_left_edge(&self) -> bool {
+        self.pos == 0 || matches!(self.grid.get(self.pos - 1), Some(b'\n') | None)
+    }
+
+    fn on_right_edge(&self) -> bool {
+        matches!(self.grid.get(self.pos + 1), Some(b'\n') | None)
+    }
+
+    fn on_top(&self) -> bool {
+        self.pos < self.width
+    }
+
+    fn on_bottom(&self) -> bool {
+        self.grid.len() - self.pos <= self.width
+    }
+
+    // get char in direction, or a '.'
+    pub fn up_left(&self) -> (u8, Option<usize>) {
+        if self.on_left_edge() || self.on_top() {
+            (b'.', None)
+        } else {
+            let p = self.pos - 1 - self.width - 1;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn up(&self) -> (u8, Option<usize>) {
+        if self.on_top() {
+            (b'.', None)
+        } else {
+            let p = self.pos - 1 - self.width;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn up_right(&self) -> (u8, Option<usize>) {
+        if self.on_right_edge() || self.on_top() {
+            (b'.', None)
+        } else {
+            let p = self.pos + 1 - self.width - 1;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn left(&self) -> (u8, Option<usize>) {
+        if self.on_left_edge() {
+            (b'.', None)
+        } else {
+            let p = self.pos - 1;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn right(&self) -> (u8, Option<usize>) {
+        if self.on_right_edge() {
+            (b'.', None)
+        } else {
+            let p = self.pos + 1;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn down_left(&self) -> (u8, Option<usize>) {
+        if self.on_left_edge() || self.on_bottom() {
+            (b'.', None)
+        } else {
+            let p = self.pos - 1 + self.width + 1;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn down(&self) -> (u8, Option<usize>) {
+        if self.on_bottom() {
+            (b'.', None)
+        } else {
+            let p = self.pos + self.width + 1;
+            (self.grid[p], Some(p))
+        }
+    }
+
+    pub fn down_right(&self) -> (u8, Option<usize>) {
+        if self.on_right_edge() || self.on_bottom() {
+            (b'.', None)
+        } else {
+            let p = self.pos + 1 + self.width + 1;
+            (self.grid[p], Some(p))
+        }
+    }
 }

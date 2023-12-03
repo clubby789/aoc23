@@ -1,4 +1,4 @@
-use std::collections::{HashMap, HashSet};
+use rustc_hash::{FxHashMap, FxHashSet};
 use std::num::{NonZeroU32, NonZeroUsize};
 
 const INPUT: &str = include_str!("inputs/3.txt");
@@ -31,7 +31,7 @@ pub fn part1() -> usize {
                 )
             })
         })
-        .collect::<HashSet<_>>();
+        .collect::<FxHashSet<_>>();
     let mut sum = 0;
     for n in numbers {
         let ItemKind::Number(num) = n.kind else {
@@ -64,7 +64,7 @@ pub fn part2() -> usize {
             _ => (),
         }
     }
-    let number_positions: HashMap<(usize, usize), NonZeroU32> = numbers
+    let number_positions: FxHashMap<(usize, usize), NonZeroU32> = numbers
         .into_iter()
         .flat_map(|((x, y), n)| (0..number_width(n).get() as usize).map(move |dx| ((x + dx, y), n)))
         .collect();

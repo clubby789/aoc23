@@ -1,4 +1,5 @@
-use rustc_hash::{FxHashMap, FxHashSet};
+use rustc_hash::FxHashMap;
+use std::cell::Cell;
 use std::num::{NonZeroU32, NonZeroUsize};
 
 const INPUT: &str = include_str!("inputs/3.txt");
@@ -19,32 +20,121 @@ fn number_width(n: NonZeroU32) -> NonZeroU32 {
 }
 
 pub fn part1() -> usize {
-    let (numbers, symbols): (Vec<_>, Vec<_>) =
-        GridIter::new(INPUT).partition(|i| matches!(i.kind, ItemKind::Number(_)));
-    let symbol_adjacents = symbols
-        .iter()
-        .flat_map(|i| {
-            DELTAS.map(|(dx, dy)| {
-                (
-                    i.pos.0.saturating_add_signed(dx),
-                    i.pos.1.saturating_add_signed(dy),
-                )
-            })
-        })
-        .collect::<FxHashSet<_>>();
     let mut sum = 0;
-    for n in numbers {
-        let ItemKind::Number(num) = n.kind else {
-            unreachable!()
-        };
-        let mut pos = n.pos;
-        for _ in 0..number_width(num).get() {
-            if symbol_adjacents.contains(&pos) {
-                sum += num.get() as usize;
-                break;
+    let mut pos = Cell::new(0);
+    let grid = INPUT.as_bytes();
+    // TODO: find this while walking
+    let width = INPUT.find('\n').unwrap();
+    // parse this number, returning it if it was adjacent to a symbol
+
+    'outer: loop {
+        // advance until digits or end of file
+        loop {
+            if let Some(cur) = grid.get(pos.get()) {
+                if cur.is_ascii_digit() {
+                    break;
+                } else {
+                    pos.set(pos.get() + 1)
+                }
+            } else {
+                break 'outer;
             }
-            pos.0 += 1;
         }
+        // parse the current number and advance past it
+        // return 0 if no adjacent symbols
+
+        let on_left_edge = || pos.get() == 0 || matches!(grid.get(pos.get() - 1), Some(b'\n')|None);
+
+        let on_right_edge = || matches!(grid.get(pos.get() + 1), Some(b'\n')|None);
+
+        let on_top = || pos.get() < width;
+
+        let on_bottom = || grid.len() - pos.get() <= width;
+
+        // closures to check if there is a symbol in the given position
+        // minus and plus one where necessary to bypass newlines
+        let up_left = || {
+            if on_left_edge() || on_top() {
+                false
+            } else {
+                grid[pos.get() - 1 - width - 1] != b'.'
+            }
+        };
+
+        let up = || {
+            if on_top() {
+                false
+            } else {
+                grid[pos.get() - width - 1] != b'.'
+            }
+        };
+
+        let up_right = || {
+            if on_right_edge() || on_top() {
+                false
+            } else {
+                grid[pos.get() + 1 - width - 1] != b'.'
+            }
+        };
+
+        let left = || {
+            if on_left_edge() {
+                false
+            } else {
+                grid[pos.get() - 1] != b'.'
+            }
+        };
+
+        let right = || {
+            if on_right_edge() {
+                false
+            } else {
+                grid[pos.get() + 1] != b'.'
+            }
+        };
+
+        let down_left = || {
+            if on_left_edge() || on_bottom() {
+                false
+            } else {
+                grid[pos.get() - 1 + width + 1] != b'.'
+            }
+        };
+
+        let down = || {
+            if on_bottom() {
+                false
+            } else {
+                grid[pos.get() + width + 1] != b'.'
+            }
+        };
+
+        let down_right = || {
+            if on_right_edge() || on_bottom() {
+                false
+            } else {
+                grid[pos.get() + 1 + width + 1] != b'.'
+            }
+        };
+
+        let n = {
+            let mut adj_symbol = false;
+            let mut n = (grid[pos.get()] - b'0') as usize;
+            adj_symbol |= left() || up_left() || down_left() || up() || down();
+            while pos.get() < grid.len() - 1 && grid[pos.get() + 1].is_ascii_digit() {
+                n = n * 10 + (grid[pos.get() + 1] - b'0') as usize;
+                pos.set(pos.get() + 1);
+                adj_symbol |= up()|| down();
+            }
+            adj_symbol |= right() || up_right() || down_right();
+            pos.set(pos.get() + 1);
+            if adj_symbol {
+                n
+            } else {
+                0
+            }
+        };
+        sum += n;
     }
     sum
 }

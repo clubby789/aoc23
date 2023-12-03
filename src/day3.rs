@@ -30,8 +30,8 @@ pub fn part1() -> usize {
     'outer: loop {
         // advance until digits or end of file
         loop {
-            if let Some(cur) = grid.get(pos.get()) {
-                if cur.is_ascii_digit() {
+            if let Some(&cur) = grid.get(pos.get()) {
+                if cur > b'0' && cur <= b'9' {
                     break;
                 } else {
                     pos.set(pos.get() + 1)
@@ -121,7 +121,7 @@ pub fn part1() -> usize {
             let mut adj_symbol = false;
             let mut n = (grid[pos.get()] - b'0') as usize;
             adj_symbol |= left() || up_left() || down_left() || up() || down();
-            while pos.get() < grid.len() - 1 && grid[pos.get() + 1].is_ascii_digit() {
+            while pos.get() < grid.len() - 1 && matches!(grid[pos.get() + 1], b'0'..=b'9') {
                 n = n * 10 + (grid[pos.get() + 1] - b'0') as usize;
                 pos.set(pos.get() + 1);
                 adj_symbol |= up()|| down();

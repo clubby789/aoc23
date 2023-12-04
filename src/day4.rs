@@ -27,16 +27,16 @@ pub fn part2() -> usize {
                 .count()
         })
         .collect();
-    let mut amounts_per_card: FxHashMap<usize, usize> = (0..cards.len()).map(|i| (i, 1)).collect();
+    let mut amounts_per_card = vec![1; cards.len()];
 
     for (i, &matches) in cards.iter().enumerate() {
         // for each copy of this card we have...
-        for _ in 0..*amounts_per_card.get(&i).unwrap() {
+        for _ in 0..amounts_per_card[i] {
             // for each win, add a copy of subsequent cards
             for j in 0..matches {
-                *amounts_per_card.get_mut(&(i + j + 1)).unwrap() += 1;
+                amounts_per_card[i + j + 1] += 1;
             }
         }
     }
-    amounts_per_card.values().sum()
+    amounts_per_card.iter().sum()
 }

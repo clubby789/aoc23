@@ -52,16 +52,14 @@ pub fn part1() -> usize {
 
 pub fn part2() -> usize {
     let skips = amount_to_skip();
-    let mut cards: Vec<_> = INPUT.lines().map(|l| matches_for_card(skips, l)).collect();
+    let cards: Vec<_> = INPUT.lines().map(|l| matches_for_card(skips, l)).collect();
     let mut amounts_per_card = vec![1; cards.len()];
 
     for (i, &matches) in cards.iter().enumerate() {
-        // for each copy of this card we have...
-        for _ in 0..amounts_per_card[i] {
-            // for each win, add a copy of subsequent cards
-            for j in 0..matches {
-                amounts_per_card[i + j + 1] += 1;
-            }
+        let copies = amounts_per_card[i];
+        // for each match, add a copy of subsequent cards for each copy of this card
+        for j in 0..matches {
+            amounts_per_card[i + j + 1] += copies;
         }
     }
     amounts_per_card.iter().sum()

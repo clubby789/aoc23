@@ -1,7 +1,9 @@
 const INPUT: &str = include_str!("inputs/4.txt");
 
 fn parse_two_byte_num(hi: u8, lo: u8) -> u8 {
-    let hi = if hi == b' ' { 0 } else { hi - b'0' };
+    // hi may be a space, in which case this wraps to 240
+    // use a mask instead to make space become 0
+    let hi = (hi - b'0') & 0b1111;
     let lo = lo - b'0';
     hi * 10 + lo
 }

@@ -8,40 +8,42 @@ fn parse_two_byte_num(hi: u8, lo: u8) -> u8 {
     hi * 10 + lo
 }
 
-// Returns the length of the Card ...: prefix, and the length of the 'winning numbers' section
+// Returns the length of the Card ...: prefix
 // Could be hardcoded, but sort of cheating
-fn amount_to_skip() -> (usize, usize) {
-    let s1 = std::hint::black_box(INPUT).find(":").unwrap() + 2;
-    let s2 = std::hint::black_box(INPUT).find('|').unwrap() + 2 - s1;
-    (s1, s2)
+// forcing inlining improves perf by a couple of us
+#[inline(always)]
+fn amount_to_skip() -> usize {
+    std::hint::black_box(INPUT).find(":").unwrap() + 2
 }
 
-fn matches_for_card(skips: (usize, usize), card: &[u8]) -> usize {
-    let (_, l) = card.split_at(skips.0);
-    let (winning, mine) = l.split_at(skips.1);
-    // remove ' | '
-    let winning = &winning[..winning.len() - 3];
+fn matches_for_card(skip: usize, card: &[u8]) -> usize {
+    let (_, l) = card.split_at(skip);
+    let mut pos = 0;
     let mut winning_numbers = [false; 100];
-    for w in winning.chunks(3) {
-        let &[hi, lo, ..] = w else { unreachable!() };
-        let n = parse_two_byte_num(hi, lo) as usize;
-        winning_numbers[n] = true;
+    while let Some(&[hi, lo]) = l.get(pos..pos + 2) {
+        if hi == b'|' {
+            pos += 2;
+            break;
+        }
+        winning_numbers[parse_two_byte_num(hi, lo) as usize] = true;
+        pos += 3;
     }
-    mine.chunks(3)
-        .filter(|m| {
-            let &&[hi, lo, ..] = m else { unreachable!() };
-            let n = parse_two_byte_num(hi, lo) as usize;
-            winning_numbers[n]
-        })
-        .count()
+    let mut sum = 0;
+    while let Some(&[hi, lo]) = l.get(pos..pos + 2) {
+        if winning_numbers[parse_two_byte_num(hi, lo) as usize] {
+            sum += 1;
+        }
+        pos += 3;
+    }
+    sum
 }
 
 pub fn part1() -> usize {
-    let skips = amount_to_skip();
+    let skip = amount_to_skip();
     INPUT
         .lines()
         .map(|l| {
-            let m = matches_for_card(skips, l.as_bytes());
+            let m = matches_for_card(skip, l.as_bytes());
             if m > 0 {
                 2usize.pow((m - 1) as u32)
             } else {

@@ -1,11 +1,11 @@
 const INPUT: &str = include_str!("inputs/4.txt");
 
 fn parse_two_byte_num(hi: u8, lo: u8) -> u8 {
-    // hi may be a space, in which case this wraps to 240
-    // use a mask instead to make space become 0
-    let hi = (hi - b'0') & 0b1111;
-    let lo = lo - b'0';
-    hi * 10 + lo
+    // correct as long as hi and lo are ASCII digits
+    // or a space
+    debug_assert!(matches!(hi, b' ' | b'1'..=b'9'));
+    debug_assert!(matches!(lo, b'0'..=b'9'));
+    (hi & 0xf) * 10 + (lo & 0xf)
 }
 
 // Returns the length of the Card ...: prefix

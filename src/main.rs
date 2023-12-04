@@ -11,12 +11,12 @@ where
 {
     // warm up for 2s
     let now = Instant::now();
-    while now.elapsed() < Duration::from_secs(2) {
+    while now.elapsed() < Duration::from_secs(5) {
         std::hint::black_box(f());
     }
     let now = Instant::now();
     let mut iters = 0;
-    while now.elapsed() < Duration::from_secs(2) {
+    while now.elapsed() < Duration::from_secs(5) {
         std::hint::black_box(f());
         iters += 1;
     }

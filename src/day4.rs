@@ -39,7 +39,7 @@ pub fn part1() -> usize {
         .map(|l| {
             let m = matches_for_card(skip, l);
             if m > 0 {
-                2usize.pow((m - 1) as u32)
+                1 << (m - 1)
             } else {
                 0
             }

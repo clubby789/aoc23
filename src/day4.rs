@@ -3,17 +3,9 @@ const INPUT: &str = include_str!("inputs/4.txt");
 fn parse_two_byte_num(hi: u8, lo: u8) -> u8 {
     // correct as long as hi and lo are ASCII digits
     // or a space
-    debug_assert!(matches!(hi, b' ' | b'1'..=b'9'));
-    debug_assert!(matches!(lo, b'0'..=b'9'));
+    debug_assert!(matches!(hi, b' ' | b'1'..=b'9'), "'{}'", hi as char);
+    debug_assert!(matches!(lo, b'0'..=b'9'), "'{}'", lo as char);
     (hi & 0xf) * 10 + (lo & 0xf)
-}
-
-// Returns the length of the Card ...: prefix
-// Could be hardcoded, but sort of cheating
-// forcing inlining improves perf by a couple of us
-#[inline(always)]
-fn amount_to_skip() -> usize {
-    std::hint::black_box(INPUT).find(":").unwrap() + 2
 }
 
 fn matches_for_card(skip: usize, card: &[u8]) -> usize {
@@ -39,11 +31,13 @@ fn matches_for_card(skip: usize, card: &[u8]) -> usize {
 }
 
 pub fn part1() -> usize {
-    let skip = amount_to_skip();
+    let skip = std::hint::black_box(INPUT).find(":").unwrap() + 2;
+    let line_length = std::hint::black_box(INPUT).find('\n').unwrap() + 1;
     INPUT
-        .lines()
+        .as_bytes()
+        .chunks(line_length)
         .map(|l| {
-            let m = matches_for_card(skip, l.as_bytes());
+            let m = matches_for_card(skip, l);
             if m > 0 {
                 2usize.pow((m - 1) as u32)
             } else {
@@ -54,10 +48,14 @@ pub fn part1() -> usize {
 }
 
 pub fn part2() -> usize {
-    let skips = amount_to_skip();
+    let skip = std::hint::black_box(INPUT).find(":").unwrap() + 2;
+    let line_length = std::hint::black_box(INPUT).find('\n').unwrap() + 1;
     let mut amounts_per_card = [1; 256];
 
-    let mut cards = INPUT.lines().map(|l| matches_for_card(skips, l.as_bytes()));
+    let mut cards = INPUT
+        .as_bytes()
+        .chunks(line_length)
+        .map(|l| matches_for_card(skip, l));
     for (i, matches) in cards.enumerate() {
         let copies = amounts_per_card[i];
         // for each match, add a copy of subsequent cards for each copy of this card

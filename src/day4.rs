@@ -56,6 +56,8 @@ pub fn part2() -> usize {
         .as_bytes()
         .chunks(line_length)
         .map(|l| matches_for_card(skip, l));
+
+    let n_cards = cards.len();
     for (i, matches) in cards.enumerate() {
         let copies = amounts_per_card[i];
         // for each match, add a copy of subsequent cards for each copy of this card
@@ -63,5 +65,5 @@ pub fn part2() -> usize {
             amounts_per_card[i + j + 1] += copies;
         }
     }
-    amounts_per_card.iter().sum()
+    amounts_per_card.iter().take(n_cards).sum()
 }

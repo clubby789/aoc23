@@ -16,19 +16,18 @@ fn amount_to_skip() -> (usize, usize) {
     (s1, s2)
 }
 
-fn matches_for_card(skips: (usize, usize), card: &str) -> usize {
+fn matches_for_card(skips: (usize, usize), card: &[u8]) -> usize {
     let (_, l) = card.split_at(skips.0);
     let (winning, mine) = l.split_at(skips.1);
     // remove ' | '
     let winning = &winning[..winning.len() - 3];
     let mut winning_numbers = [false; 100];
-    for w in winning.as_bytes().chunks(3) {
+    for w in winning.chunks(3) {
         let &[hi, lo, ..] = w else { unreachable!() };
         let n = parse_two_byte_num(hi, lo) as usize;
         winning_numbers[n] = true;
     }
-    mine.as_bytes()
-        .chunks(3)
+    mine.chunks(3)
         .filter(|m| {
             let &&[hi, lo, ..] = m else { unreachable!() };
             let n = parse_two_byte_num(hi, lo) as usize;
@@ -42,7 +41,7 @@ pub fn part1() -> usize {
     INPUT
         .lines()
         .map(|l| {
-            let m = matches_for_card(skips, l);
+            let m = matches_for_card(skips, l.as_bytes());
             if m > 0 {
                 2usize.pow((m - 1) as u32)
             } else {
@@ -56,7 +55,7 @@ pub fn part2() -> usize {
     let skips = amount_to_skip();
     let mut amounts_per_card = [1; 256];
 
-    let mut cards = INPUT.lines().map(|l| matches_for_card(skips, l));
+    let mut cards = INPUT.lines().map(|l| matches_for_card(skips, l.as_bytes()));
     for (i, matches) in cards.enumerate() {
         let copies = amounts_per_card[i];
         // for each match, add a copy of subsequent cards for each copy of this card

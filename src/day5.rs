@@ -70,23 +70,19 @@ pub fn part1() -> usize {
 
 pub fn part2() -> usize {
     // copyable range type
-    #[derive(Copy, Clone, PartialOrd, PartialEq)]
+    #[derive(Copy, Clone)]
     struct Range {
         start: usize,
         end: usize,
     }
-    impl Debug for Range {
-        fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-            write!(f, "({}..{})", self.start, self.end)
-        }
-    }
+
     impl Range {
         pub fn new(start: usize, end: usize) -> Self {
             debug_assert!(end >= start, "{end} < {start}");
             Self { start, end }
         }
     }
-    #[derive(Copy, Clone, Debug, PartialOrd, PartialEq)]
+    #[derive(Copy, Clone)]
     enum Mapped {
         Yes(Range),
         No(Range),
@@ -127,12 +123,8 @@ pub fn part2() -> usize {
                 let ends_after = r.end > src_start + len;
                 let ends_before = r.end < src_start;
                 if starts_before && ends_before || starts_after {
-                    // no overlap
-                    //println!("{m} does not overlap {r:?}");
                     continue;
                 }
-                //println!("{starts_before}, {ends_after}");
-                // split this range with the mapping
                 match (starts_before, ends_after) {
                     // the mapping is fully contained by this range
                     // | RRRRRRRR | -> // RRMMMRR
@@ -181,7 +173,6 @@ pub fn part2() -> usize {
         for r in ranges.iter_mut() {
             r.make_no();
         }
-        //println!("{ranges:?}");
     }
     ranges
         .into_iter()

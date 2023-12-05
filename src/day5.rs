@@ -112,14 +112,12 @@ pub fn part2() -> usize {
     }
 
     while let Some(part) = parts.next() {
-        //println!("doing mapping {}", part.lines().next().unwrap());
-        let mut mappings = part.lines().skip(1);
-        for m in mappings {
-            //println!(" - {m}");
-            let mut parts = m.split(' ');
-            let dest_start = parts.next().unwrap().parse::<usize>().unwrap();
-            let src_start = parts.next().unwrap().parse::<usize>().unwrap();
-            let len = parts.next().unwrap().parse::<usize>().unwrap();
+        let (_, mappings) = part.split_once('\n').unwrap();
+        for m in mappings.lines() {
+            let mut parts = m.split(' ').map(|n| n.parse::<usize>().unwrap());
+            let dest_start = parts.next().unwrap();
+            let src_start = parts.next().unwrap();
+            let len = parts.next().unwrap();
             for i in 0..ranges.len() {
                 let Mapped::No(r) = ranges[i] else {
                     continue;

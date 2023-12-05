@@ -90,8 +90,8 @@ pub fn part2() -> usize {
 
     impl Mapped {
         pub fn make_no(&mut self) {
-            if let Mapped::Yes(n) = *self {
-                *self = Mapped::No(n)
+            match self {
+                Mapped::No(n) | Mapped::Yes(n) => *self = Mapped::No(*n),
             }
         }
     }

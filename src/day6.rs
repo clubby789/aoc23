@@ -16,16 +16,25 @@ fn calculate_number_of_wins(limit: u32, distance: u32) -> u32 {
     (hi.ceil() - lo.floor()) as u32 - 1
 }
 
+fn parse_ascii(s: &str) -> u32 {
+    s.as_bytes()
+        .iter()
+        .fold(0, |acc, b| acc * 10 + (b & 0xf) as u32)
+}
+
+fn parse_ascii_skip_spaces(s: &str) -> u32 {
+    s.as_bytes()
+        .iter()
+        .filter(|&&b| b != b' ')
+        .fold(0, |acc, b| acc * 10 + (b & 0xf) as u32)
+}
+
 pub fn part1() -> usize {
     let (times, distances) = INPUT.split_once('\n').unwrap();
-    let times = times.split_once(':').unwrap().1.trim();
-    let distances = distances.split_once(':').unwrap().1.trim();
-    let times = times
-        .split_ascii_whitespace()
-        .map(|t| t.parse::<u32>().ok().unwrap());
-    let distances = distances
-        .split_ascii_whitespace()
-        .map(|t| t.parse::<u32>().ok().unwrap());
+    let times = times.split_once(':').unwrap().1.trim_start();
+    let distances = distances.split_once(':').unwrap().1.trim_start();
+    let times = times.split_ascii_whitespace().map(parse_ascii);
+    let distances = distances.split_ascii_whitespace().map(parse_ascii);
     times
         .zip(distances)
         .map(|(time, distance)| calculate_number_of_wins(time, distance) as usize)
@@ -35,13 +44,7 @@ pub fn part2() -> usize {
     let (times, distances) = INPUT.split_once('\n').unwrap();
     let times = times.split_once(':').unwrap().1.trim();
     let distances = distances.split_once(':').unwrap().1.trim();
-    let time = times.split_ascii_whitespace().fold(0, |acc, x| {
-        let l = x.len();
-        (acc * 10u32.pow(l as u32)) + x.parse::<u32>().ok().unwrap()
-    });
-    let distance: u32 = distances.split_ascii_whitespace().fold(0, |acc, x| {
-        let l = x.len();
-        (acc * 10u32.pow(l as u32)) + x.parse::<u32>().ok().unwrap()
-    });
+    let time = parse_ascii_skip_spaces(times);
+    let distance = parse_ascii_skip_spaces(distances);
     calculate_number_of_wins(time, distance) as usize
 }

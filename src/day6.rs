@@ -9,8 +9,8 @@ fn calculate_number_of_wins(limit: u64, distance: u64) -> u32 {
     solve for h with quadratic formula
     h = (l +/- sqrt(l^2 - 4d)) / 2
      */
-    let limit = limit as f32;
-    let distance = distance as f32;
+    let limit = limit as f64;
+    let distance = distance as f64;
     let lo = (limit - (limit.powf(2.0) - 4.0 * distance).sqrt()) / 2.0;
     let hi = (limit + (limit.powf(2.0) - 4.0 * distance).sqrt()) / 2.0;
     (hi.ceil() - lo.floor()) as u32 - 1

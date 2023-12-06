@@ -9,18 +9,20 @@ fn timeit<F, U>(f: F) -> (Duration, U)
 where
     F: Fn() -> U,
 {
-    // warm up for 2s
+    // run a few times to get an estimate of timing
     let now = Instant::now();
-    while now.elapsed() < Duration::from_secs(5) {
+    for _ in 0..32 {
         std::hint::black_box(f());
     }
+    let initial_avg = now.elapsed() / 32;
+
+    let measure_loops = (Duration::from_secs(5).as_nanos() / initial_avg.as_nanos()) as u32;
+
     let now = Instant::now();
-    let mut iters = 0;
-    while now.elapsed() < Duration::from_secs(5) {
+    for _ in 0..measure_loops {
         std::hint::black_box(f());
-        iters += 1;
     }
-    let avg = now.elapsed() / iters;
+    let avg = now.elapsed() / measure_loops;
     let ret = std::hint::black_box(f());
     (avg, ret)
 }

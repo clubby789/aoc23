@@ -16,20 +16,57 @@ fn calculate_number_of_wins(limit: u64, distance: u64) -> u32 {
     (hi.ceil() - lo.floor()) as u32 - 1
 }
 
-fn parse_ascii(s: &str) -> u64 {
-    s.as_bytes()
-        .iter()
-        .fold(0, |acc, b| acc * 10 + (b & 0xf) as u64)
+struct Part1Iterator<'a> {
+    src_time: &'a [u8],
+    src_dist: &'a [u8],
+    pos: usize,
+}
+
+impl<'a> Part1Iterator<'a> {
+    pub fn new(s: &'a str) -> Self {
+        let src = s.as_bytes();
+        let newline = src.iter().position(|&b| b == b'\n').unwrap();
+        let (src_time, src_dist) = src.split_at(newline);
+        let src_time = &src_time[9..]; // skip 'Time:' and extra spaces used for alignment
+        let src_dist = &src_dist[10..]; // skip newline and 'Distance:'
+        Self {
+            src_time,
+            src_dist,
+            pos: 0,
+        }
+    }
+}
+
+impl<'a> Iterator for Part1Iterator<'a> {
+    type Item = (u64, u64);
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut time = 0;
+        let mut distance = 0;
+        let mut pos = self.pos;
+        while let Some((&t, &d)) = Option::zip(self.src_time.get(pos), self.src_dist.get(pos)) {
+            // reached space at the end of the number
+            if t == b' ' && time > 0 {
+                break;
+            }
+            if t != b' ' {
+                time = time * 10 + (t & 0xf) as u64;
+            }
+            if d != b' ' {
+                distance = distance * 10 + (d & 0xf) as u64;
+            }
+            pos += 1;
+        }
+        // didn't get any numbers
+        if time == 0 {
+            return None;
+        }
+        self.pos = pos;
+        Some((time, distance))
+    }
 }
 
 pub fn part1() -> usize {
-    let (times, distances) = INPUT.split_once('\n').unwrap();
-    let times = times.split_once(':').unwrap().1.trim_start();
-    let distances = distances.split_once(':').unwrap().1.trim_start();
-    let times = times.split_ascii_whitespace().map(parse_ascii);
-    let distances = distances.split_ascii_whitespace().map(parse_ascii);
-    times
-        .zip(distances)
+    Part1Iterator::new(INPUT)
         .map(|(time, distance)| calculate_number_of_wins(time, distance) as usize)
         .product()
 }

@@ -1,13 +1,19 @@
 const INPUT: &str = include_str!("inputs/6.txt");
 
-type N = u64;
-
-fn calculate_distance(time_held: N, time_limit: N) -> N {
-    if time_limit <= time_held {
-        0
-    } else {
-        time_held * (time_limit - time_held)
-    }
+fn calculate_number_of_wins(limit: u32, distance: u32) -> u32 {
+    /*
+    d = h * (l - h)
+    h * (l - h) > d
+    hl - h^2 > d
+    h^2 - hl + d = 0
+    solve for h with quadratic formula
+    h = (l +/- sqrt(l^2 - 4d)) / 2
+     */
+    let limit = limit as f32;
+    let distance = distance as f32;
+    let lo = (limit - (limit.powf(2.0) - 4.0 * distance).sqrt()) / 2.0;
+    let hi = (limit + (limit.powf(2.0) - 4.0 * distance).sqrt()) / 2.0;
+    (hi.ceil() - lo.floor()) as u32 - 1
 }
 
 pub fn part1() -> usize {
@@ -16,32 +22,26 @@ pub fn part1() -> usize {
     let distances = distances.split_once(':').unwrap().1.trim();
     let times = times
         .split_ascii_whitespace()
-        .map(|t| t.parse::<N>().unwrap());
+        .map(|t| t.parse::<u32>().ok().unwrap());
     let distances = distances
         .split_ascii_whitespace()
-        .map(|t| t.parse::<N>().unwrap());
+        .map(|t| t.parse::<u32>().ok().unwrap());
     times
         .zip(distances)
-        .map(|(time, distance)| {
-            (1..time)
-                .filter(|hold| calculate_distance(*hold, time) > distance)
-                .count()
-        })
+        .map(|(time, distance)| calculate_number_of_wins(time, distance) as usize)
         .product()
 }
 pub fn part2() -> usize {
     let (times, distances) = INPUT.split_once('\n').unwrap();
     let times = times.split_once(':').unwrap().1.trim();
     let distances = distances.split_once(':').unwrap().1.trim();
-    let time: u64 = times.split_ascii_whitespace().fold(0, |acc, x| {
+    let time = times.split_ascii_whitespace().fold(0, |acc, x| {
         let l = x.len();
-        (acc * 10u64.pow(l as u32)) + x.parse::<N>().unwrap()
+        (acc * 10u32.pow(l as u32)) + x.parse::<u32>().ok().unwrap()
     });
-    let distance: u64 = distances.split_ascii_whitespace().fold(0, |acc, x| {
+    let distance: u32 = distances.split_ascii_whitespace().fold(0, |acc, x| {
         let l = x.len();
-        (acc * 10u64.pow(l as u32)) + x.parse::<N>().unwrap()
+        (acc * 10u32.pow(l as u32)) + x.parse::<u32>().ok().unwrap()
     });
-    (1..time)
-        .filter(|hold| calculate_distance(*hold, time) > distance)
-        .count()
+    calculate_number_of_wins(time, distance) as usize
 }

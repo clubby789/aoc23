@@ -62,7 +62,6 @@ fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
     // bitset of encountered cards
     let mut encountered = BitSet::new();
     let mut jokers = 0;
-    cards.sort_unstable();
     for c in cards {
         if JOKER && c == Card::Joker {
             jokers += 1;
@@ -74,6 +73,7 @@ fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
         1 => Type::FiveOfAKind,
         2 if JOKER && jokers > 0 => Type::FiveOfAKind,
         2 => {
+            cards.sort_unstable();
             let midp = cards
                 .windows(2)
                 .enumerate()
@@ -88,6 +88,7 @@ fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
             }
         }
         3 => {
+            cards.sort_unstable();
             let mut p1 = None;
             let mut p2 = None;
             for (i, w) in cards.windows(2).enumerate() {
@@ -125,7 +126,7 @@ fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
                     // JAABB |
                     (2, 4, 1) | (2, 3, 1) | (1, 3, 1) => Type::FullHouse,
 
-                    _ => unreachable!(""),
+                    _ => unreachable!(),
                 }
             } else {
                 match (p1, p2) {

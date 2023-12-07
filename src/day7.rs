@@ -1,5 +1,3 @@
-use std::cmp::Ordering;
-
 const INPUT: &str = include_str!("inputs/7.txt");
 
 #[derive(Copy, Clone, PartialOrd, PartialEq, Ord, Eq, Debug, Hash)]
@@ -38,25 +36,8 @@ const CARD_ARR: [Card; 15] = [
     Card::Ace,
 ];
 
-#[derive(Copy, Clone, PartialEq, Eq, Debug)]
-struct Hand<const JOKER: bool>([Card; 5], u32);
-
-impl<const JOKER: bool> PartialOrd for Hand<JOKER> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-impl<const JOKER: bool> Ord for Hand<JOKER> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        let t1 = self.hand_type();
-        let t2 = other.hand_type();
-        match t1.cmp(&t2) {
-            Ordering::Less => Ordering::Less,
-            Ordering::Equal => self.0.cmp(&other.0),
-            Ordering::Greater => Ordering::Greater,
-        }
-    }
-}
+#[derive(Copy, Clone, PartialOrd, Ord, PartialEq, Eq, Debug)]
+struct Hand<const JOKER: bool>(Type, [Card; 5], u32);
 
 struct BitSet(u16);
 impl BitSet {
@@ -77,106 +58,103 @@ impl BitSet {
     }
 }
 
-impl<const JOKER: bool> Hand<JOKER> {
-    pub fn hand_type(&self) -> Type {
-        // bitset of encountered cards
-        let mut encountered = BitSet::new();
-        let mut jokers = 0;
-        let mut cards = self.0;
-        cards.sort_unstable();
-        for c in cards {
-            if JOKER && c == Card::Joker {
-                jokers += 1;
-            }
-            encountered.set(c as usize);
+fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
+    // bitset of encountered cards
+    let mut encountered = BitSet::new();
+    let mut jokers = 0;
+    cards.sort_unstable();
+    for c in cards {
+        if JOKER && c == Card::Joker {
+            jokers += 1;
         }
-        let uniques = encountered.len();
-        match uniques {
-            1 => Type::FiveOfAKind,
-            2 if JOKER && jokers > 0 => Type::FiveOfAKind,
-            2 => {
-                let midp = cards
-                    .windows(2)
-                    .enumerate()
-                    .find_map(|(i, w)| if w[0] != w[1] { Some(i + 1) } else { None })
-                    .unwrap();
-                match midp {
-                    1 | 4 => Type::FourOfAKind,
-                    _ => {
-                        debug_assert!(matches!(midp, 2 | 3));
-                        Type::FullHouse
-                    }
+        encountered.set(c as usize);
+    }
+    let uniques = encountered.len();
+    match uniques {
+        1 => Type::FiveOfAKind,
+        2 if JOKER && jokers > 0 => Type::FiveOfAKind,
+        2 => {
+            let midp = cards
+                .windows(2)
+                .enumerate()
+                .find_map(|(i, w)| if w[0] != w[1] { Some(i + 1) } else { None })
+                .unwrap();
+            match midp {
+                1 | 4 => Type::FourOfAKind,
+                _ => {
+                    debug_assert!(matches!(midp, 2 | 3));
+                    Type::FullHouse
                 }
             }
-            3 => {
-                let mut p1 = None;
-                let mut p2 = None;
-                for (i, w) in cards.windows(2).enumerate() {
-                    if w[0] != w[1] {
-                        if p1.is_none() {
-                            p1 = Some(i + 1)
-                        } else if p2.is_none() {
-                            p2 = Some(i + 1)
-                        } else {
-                            break;
-                        }
-                    }
-                }
-                let p1 = p1.unwrap();
-                let p2 = p2.unwrap();
-                if JOKER && jokers > 0 {
-                    match (p1, p2, jokers) {
-                        // AAABJ -> AAABA
-                        // AAAJB |
-                        // JAAAB |
-                        // BJAAA |
-                        (3, 4, 1) | (1, 4, 1) | (1, 2, 1) => Type::FourOfAKind,
-                        // AABJJ -> AABAA
-                        // AAJJB |
-                        // JJAAB |
-                        // JJBAA |
-                        (2, 3, 2) | (2, 4, 2) => Type::FourOfAKind,
-                        // ABJJJ -> ABBBB
-                        // AJJJB |
-                        // JJJAB |
-                        (1, 2, 3) | (1, 4, 3) | (3, 4, 3) => Type::FourOfAKind,
-
-                        // AABBJ -> AABBB
-                        // AAJBB |
-                        // JAABB |
-                        (2, 4, 1) | (2, 3, 1) | (1, 3, 1) => Type::FullHouse,
-
-                        u => unreachable!("{u:?}"),
-                    }
-                } else {
-                    match (p1, p2) {
-                        // ABCCC
-                        (1, 2) => Type::ThreeOfAKind,
-                        // ABBBC
-                        (1, 4) => Type::ThreeOfAKind,
-                        // AAABC
-                        (3, 4) => Type::ThreeOfAKind,
-                        // AABBC
-                        (2, 4) => Type::TwoPair,
-                        // ABBCC
-                        (1, 3) => Type::TwoPair,
-                        // AABCC
-                        (2, 3) => Type::TwoPair,
-                        _ => unreachable!(),
-                    }
-                }
-            }
-            // ABCJJ -> ABCCC
-            // ABBCJ -> ABBCB
-            4 if JOKER && jokers > 0 => Type::ThreeOfAKind,
-            4 => Type::OnePair,
-            5 if JOKER && jokers > 0 => Type::OnePair,
-            _ => Type::HighCard,
         }
+        3 => {
+            let mut p1 = None;
+            let mut p2 = None;
+            for (i, w) in cards.windows(2).enumerate() {
+                if w[0] != w[1] {
+                    if p1.is_none() {
+                        p1 = Some(i + 1)
+                    } else if p2.is_none() {
+                        p2 = Some(i + 1)
+                    } else {
+                        break;
+                    }
+                }
+            }
+            let p1 = p1.unwrap();
+            let p2 = p2.unwrap();
+            if JOKER && jokers > 0 {
+                match (p1, p2, jokers) {
+                    // AAABJ -> AAABA
+                    // AAAJB |
+                    // JAAAB |
+                    // BJAAA |
+                    (3, 4, 1) | (1, 4, 1) | (1, 2, 1) => Type::FourOfAKind,
+                    // AABJJ -> AABAA
+                    // AAJJB |
+                    // JJAAB |
+                    // JJBAA |
+                    (2, 3, 2) | (2, 4, 2) => Type::FourOfAKind,
+                    // ABJJJ -> ABBBB
+                    // AJJJB |
+                    // JJJAB |
+                    (1, 2, 3) | (1, 4, 3) | (3, 4, 3) => Type::FourOfAKind,
+
+                    // AABBJ -> AABBB
+                    // AAJBB |
+                    // JAABB |
+                    (2, 4, 1) | (2, 3, 1) | (1, 3, 1) => Type::FullHouse,
+
+                    _ => unreachable!(""),
+                }
+            } else {
+                match (p1, p2) {
+                    // ABCCC
+                    (1, 2) => Type::ThreeOfAKind,
+                    // ABBBC
+                    (1, 4) => Type::ThreeOfAKind,
+                    // AAABC
+                    (3, 4) => Type::ThreeOfAKind,
+                    // AABBC
+                    (2, 4) => Type::TwoPair,
+                    // ABBCC
+                    (1, 3) => Type::TwoPair,
+                    // AABCC
+                    (2, 3) => Type::TwoPair,
+                    _ => unreachable!(),
+                }
+            }
+        }
+        // ABCJJ -> ABCCC
+        // ABBCJ -> ABBCB
+        4 if JOKER && jokers > 0 => Type::ThreeOfAKind,
+        4 => Type::OnePair,
+        5 if JOKER && jokers > 0 => Type::OnePair,
+        _ => Type::HighCard,
     }
 }
 
-#[derive(PartialOrd, PartialEq, Debug, Ord, Eq)]
+#[derive(PartialOrd, PartialEq, Debug, Ord, Eq, Copy, Clone)]
 enum Type {
     HighCard,
     OnePair,
@@ -224,7 +202,8 @@ fn parse_input<const JOKER: bool>(inp: &str) -> Vec<Hand<JOKER>> {
             pos += 1;
         }
         pos += 1;
-        result.push(Hand(hand, bet))
+        let typ = hand_type::<JOKER>(hand);
+        result.push(Hand(typ, hand, bet))
     }
     result
 }
@@ -235,7 +214,7 @@ pub fn part1() -> usize {
     bets.sort_unstable();
     bets.into_iter()
         .enumerate()
-        .map(|(rank, bet)| (rank + 1) * bet.1 as usize)
+        .map(|(rank, bet)| (rank + 1) * bet.2 as usize)
         .sum()
 }
 
@@ -245,6 +224,6 @@ pub fn part2() -> usize {
     bets.sort_unstable();
     bets.into_iter()
         .enumerate()
-        .map(|(rank, bet)| (rank + 1) * bet.1 as usize)
+        .map(|(rank, bet)| (rank + 1) * bet.2 as usize)
         .sum()
 }

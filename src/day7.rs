@@ -232,7 +232,7 @@ fn parse_input<const JOKER: bool>(inp: &str) -> Vec<Hand<JOKER>> {
 pub fn part1() -> usize {
     let mut bets = parse_input::<false>(INPUT);
     // sort from weakest hand first
-    bets.sort();
+    bets.sort_unstable();
     bets.into_iter()
         .enumerate()
         .map(|(rank, bet)| (rank + 1) * bet.1 as usize)
@@ -242,7 +242,7 @@ pub fn part1() -> usize {
 pub fn part2() -> usize {
     let mut bets = parse_input::<true>(INPUT);
     // sort from weakest hand first
-    bets.sort();
+    bets.sort_unstable();
     bets.into_iter()
         .enumerate()
         .map(|(rank, bet)| (rank + 1) * bet.1 as usize)

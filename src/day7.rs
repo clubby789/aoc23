@@ -39,7 +39,7 @@ const CARD_ARR: [Card; 15] = [
 ];
 
 #[derive(Copy, Clone, PartialEq, Eq, Debug)]
-struct Hand<const JOKER: bool>([Card; 5], u64);
+struct Hand<const JOKER: bool>([Card; 5], u32);
 
 impl<const JOKER: bool> PartialOrd for Hand<JOKER> {
     fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
@@ -188,32 +188,45 @@ enum Type {
 }
 
 fn parse_input<const JOKER: bool>(inp: &str) -> Vec<Hand<JOKER>> {
-    inp.lines()
-        .map(|l| {
-            let (hand, bet) = l.split_once(' ').unwrap();
-            let hand = hand.as_bytes();
-            assert_eq!(hand.len(), 5);
-            let hand = [0, 1, 2, 3, 4].map(|i| match hand[i] {
-                b'2' => Card::Two,
-                b'3' => Card::Three,
-                b'4' => Card::Four,
-                b'5' => Card::Five,
-                b'6' => Card::Six,
-                b'7' => Card::Seven,
-                b'8' => Card::Eight,
-                b'9' => Card::Nine,
-                b'T' => Card::Ten,
-                b'J' if JOKER => Card::Joker,
-                b'J' => Card::Jack,
-                b'Q' => Card::Queen,
-                b'K' => Card::King,
-                b'A' => Card::Ace,
-                _ => unreachable!(),
-            });
-            let bet = bet.parse().unwrap();
-            Hand(hand, bet)
-        })
-        .collect()
+    let mut result = Vec::with_capacity(inp.len() / 9);
+    let src = inp.as_bytes();
+    let mut pos = 0;
+    while pos < inp.len() {
+        let hand = &src[pos..pos + 5];
+        assert_eq!(hand.len(), 5);
+        let hand = [0, 1, 2, 3, 4].map(|i| match hand[i] {
+            b'2' => Card::Two,
+            b'3' => Card::Three,
+            b'4' => Card::Four,
+            b'5' => Card::Five,
+            b'6' => Card::Six,
+            b'7' => Card::Seven,
+            b'8' => Card::Eight,
+            b'9' => Card::Nine,
+            b'T' => Card::Ten,
+            b'J' => {
+                if JOKER {
+                    Card::Joker
+                } else {
+                    Card::Jack
+                }
+            }
+            b'Q' => Card::Queen,
+            b'K' => Card::King,
+            b'A' => Card::Ace,
+            _ => unreachable!(),
+        });
+        // skip hand and space
+        pos += 6;
+        let mut bet = 0;
+        while pos < inp.len() && src[pos] != b'\n' {
+            bet = bet * 10 + (src[pos] & 0xf) as u32;
+            pos += 1;
+        }
+        pos += 1;
+        result.push(Hand(hand, bet))
+    }
+    result
 }
 
 pub fn part1() -> usize {

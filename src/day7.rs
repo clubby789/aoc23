@@ -58,6 +58,17 @@ impl BitSet {
     }
 }
 
+fn midpoints<const N: usize>(cards: &[Card; 5]) -> [usize; N] {
+    let mut pos = 0;
+    std::array::from_fn(|_| {
+        while cards[pos] == cards[pos + 1] {
+            pos += 1
+        }
+        pos += 1;
+        pos
+    })
+}
+
 fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
     // bitset of encountered cards
     let mut encountered = BitSet::new();
@@ -74,11 +85,7 @@ fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
         2 if JOKER && jokers > 0 => Type::FiveOfAKind,
         2 => {
             cards.sort_unstable();
-            let midp = cards
-                .windows(2)
-                .enumerate()
-                .find_map(|(i, w)| if w[0] != w[1] { Some(i + 1) } else { None })
-                .unwrap();
+            let [midp] = midpoints(&cards);
             match midp {
                 1 | 4 => Type::FourOfAKind,
                 _ => {
@@ -89,21 +96,7 @@ fn hand_type<const JOKER: bool>(mut cards: [Card; 5]) -> Type {
         }
         3 => {
             cards.sort_unstable();
-            let mut p1 = None;
-            let mut p2 = None;
-            for (i, w) in cards.windows(2).enumerate() {
-                if w[0] != w[1] {
-                    if p1.is_none() {
-                        p1 = Some(i + 1)
-                    } else if p2.is_none() {
-                        p2 = Some(i + 1)
-                    } else {
-                        break;
-                    }
-                }
-            }
-            let p1 = p1.unwrap();
-            let p2 = p2.unwrap();
+            let [p1, p2] = midpoints(&cards);
             if JOKER && jokers > 0 {
                 match (p1, p2, jokers) {
                     // AAABJ -> AAABA
@@ -171,9 +164,8 @@ fn parse_input<const JOKER: bool>(inp: &str) -> Vec<Hand<JOKER>> {
     let src = inp.as_bytes();
     let mut pos = 0;
     while pos < inp.len() {
-        let hand = &src[pos..pos + 5];
-        assert_eq!(hand.len(), 5);
-        let hand = [0, 1, 2, 3, 4].map(|i| match hand[i] {
+        let hand: &[u8; 5] = &src[pos..pos + 5].try_into().unwrap();
+        let hand = hand.map(|b| match b {
             b'2' => Card::Two,
             b'3' => Card::Three,
             b'4' => Card::Four,

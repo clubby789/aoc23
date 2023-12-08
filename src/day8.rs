@@ -25,11 +25,11 @@ fn parse_node(n: &str) -> (u16, (u16, u16)) {
     )
 }
 
-fn make_map(nodes: &str) -> Box<[Option<(u16, u16)>; u16::MAX as usize]> {
-    let mut data: Box<[Option<(u16, u16)>; u16::MAX as usize]> =
-        vec![None; u16::MAX as usize].try_into().unwrap();
+fn make_map(nodes: &str) -> Box<[(u16, u16); u16::MAX as usize]> {
+    let mut data: Box<[(u16, u16); u16::MAX as usize]> =
+        vec![(0, 0); u16::MAX as usize].try_into().unwrap();
     for (key, value) in nodes.lines().map(parse_node) {
-        data[key as usize] = Some(value);
+        data[key as usize] = value;
     }
     data
 }
@@ -40,7 +40,7 @@ pub fn part1() -> usize {
     let mut cur = AAA;
     let mut iter = directions.bytes().cycle().enumerate();
     while let Some((_, dir)) = iter.next() {
-        let node = nodes[cur as usize].unwrap();
+        let node = nodes[cur as usize];
         if dir == b'L' {
             cur = node.0
         } else {
@@ -76,7 +76,9 @@ pub fn part2() -> usize {
         .iter()
         .enumerate()
         .filter_map(|(i, v)| {
-            if i & 0b11111 == (b'Z' - b'A') as usize && v.is_some() {
+            // lowest bit is A
+            // make sure this isn't an uninitialised entry
+            if i & 0b11111 == 0 && v.0 != v.1 {
                 Some(i)
             } else {
                 None
@@ -91,7 +93,7 @@ pub fn part2() -> usize {
             break;
         }
         for j in (0..cur.len()).rev() {
-            let nodes = nodes[cur[j]].unwrap();
+            let nodes = nodes[cur[j]];
             let new = if dir == b'L' { nodes.0 } else { nodes.1 };
             if new & 0b11111 == (b'Z' - b'A') as u16 {
                 cur.remove(j);

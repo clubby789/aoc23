@@ -2,25 +2,28 @@ use rustc_hash::FxHashMap;
 
 const INPUT: &str = include_str!("inputs/8.txt");
 
-fn parse_node(n: &str) -> (&str, (&str, &str)) {
+fn parse_node(n: &str) -> ([u8; 3], ([u8; 3], [u8; 3])) {
     let (key, value) = n.split_once(" = ").unwrap();
+    let key = key.as_bytes().try_into().unwrap();
     let (l, r) = value.trim_matches(['(', ')']).split_once(", ").unwrap();
+    let l = l.as_bytes().try_into().unwrap();
+    let r = r.as_bytes().try_into().unwrap();
     (key, (l, r))
 }
 
 pub fn part1() -> usize {
     let (directions, nodes) = INPUT.split_once("\n\n").unwrap();
     let nodes: FxHashMap<_, _> = nodes.lines().map(parse_node).collect();
-    let mut cur = "AAA";
+    let mut cur = [b'A', b'A', b'A'];
     let mut iter = directions.bytes().cycle().enumerate();
     while let Some((_, dir)) = iter.next() {
-        let node = nodes.get(cur).unwrap();
+        let node = nodes.get(&cur).unwrap();
         if dir == b'L' {
             cur = node.0
         } else {
             cur = node.1
         };
-        if cur == "ZZZ" {
+        if cur == [b'Z', b'Z', b'Z'] {
             break;
         }
     }
@@ -48,7 +51,7 @@ pub fn part2() -> usize {
     let nodes: FxHashMap<_, _> = nodes.lines().map(parse_node).collect();
     let mut cur = nodes
         .keys()
-        .filter(|k| k.ends_with('Z'))
+        .filter(|k| k[2] == b'Z')
         .copied()
         .collect::<Vec<_>>();
     let mut running_lcm = 1;
@@ -59,9 +62,9 @@ pub fn part2() -> usize {
             break;
         }
         for j in (0..cur.len()).rev() {
-            let nodes = *nodes.get(cur[j]).unwrap();
+            let nodes = *nodes.get(&cur[j]).unwrap();
             let new = if dir == b'L' { nodes.0 } else { nodes.1 };
-            if new.ends_with('Z') {
+            if new[2] == b'Z' {
                 cur.remove(j);
                 running_lcm = lcm(running_lcm, i + 1);
             } else {

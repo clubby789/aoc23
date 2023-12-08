@@ -27,7 +27,7 @@ fn parse_node(n: &str) -> (u16, (u16, u16)) {
 
 fn make_map(nodes: &str) -> Box<[Option<(u16, u16)>; u16::MAX as usize]> {
     let mut data: Box<[Option<(u16, u16)>; u16::MAX as usize]> =
-        Box::new([None; u16::MAX as usize]);
+        vec![None; u16::MAX as usize].try_into().unwrap();
     for (key, value) in nodes.lines().map(parse_node) {
         data[key as usize] = Some(value);
     }

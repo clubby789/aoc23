@@ -15,8 +15,8 @@ fn alpha_to_u16(b: [u8; 3]) -> u16 {
 const AAA: u16 = 0;
 const ZZZ: u16 = 26425;
 
-fn parse_node(n: &str) -> (u16, (u16, u16)) {
-    let [k1, k2, k3, _, _, _, _, l1, l2, l3, _, _, r1, r2, r3, _] = *n.as_bytes() else {
+fn parse_node(n: &[u8]) -> (u16, (u16, u16)) {
+    let [k1, k2, k3, _, _, _, _, l1, l2, l3, _, _, r1, r2, r3, _, ..] = *n else {
         unreachable!();
     };
     (
@@ -28,7 +28,7 @@ fn parse_node(n: &str) -> (u16, (u16, u16)) {
 fn make_map(nodes: &str) -> Box<[(u16, u16); u16::MAX as usize]> {
     let mut data: Box<[(u16, u16); u16::MAX as usize]> =
         vec![(0, 0); u16::MAX as usize].try_into().unwrap();
-    for (key, value) in nodes.lines().map(parse_node) {
+    for (key, value) in nodes.as_bytes().chunks(17).map(parse_node) {
         data[key as usize] = value;
     }
     data

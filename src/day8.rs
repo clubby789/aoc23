@@ -72,19 +72,12 @@ fn lcm(a: usize, b: usize) -> usize {
 pub fn part2() -> usize {
     let (directions, nodes) = INPUT.split_once("\n\n").unwrap();
     let nodes = make_map(nodes);
-    let mut cur = nodes
-        .iter()
-        .enumerate()
-        .filter_map(|(i, v)| {
-            // lowest bit is A
-            // make sure this isn't an uninitialised entry
-            if i & 0b11111 == 0 && v.0 != v.1 {
-                Some(i)
-            } else {
-                None
-            }
-        })
-        .collect::<Vec<_>>();
+    let mut cur = Vec::with_capacity(u16::MAX as usize / 32);
+    cur.extend(
+        (0..u16::MAX)
+            .step_by(32)
+            .filter(|n| nodes[*n as usize].0 != 0),
+    );
     let mut running_lcm = 1;
 
     let mut iter = directions.bytes().cycle().enumerate();
@@ -93,13 +86,13 @@ pub fn part2() -> usize {
             break;
         }
         for j in (0..cur.len()).rev() {
-            let nodes = nodes[cur[j]];
+            let nodes = nodes[cur[j] as usize];
             let new = if dir == b'L' { nodes.0 } else { nodes.1 };
             if new & 0b11111 == (b'Z' - b'A') as u16 {
                 cur.remove(j);
                 running_lcm = lcm(running_lcm, i + 1);
             } else {
-                cur[j] = new as usize;
+                cur[j] = new;
             }
         }
     }

@@ -3,12 +3,10 @@ use rustc_hash::FxHashMap;
 const INPUT: &str = include_str!("inputs/8.txt");
 
 fn parse_node(n: &str) -> ([u8; 3], ([u8; 3], [u8; 3])) {
-    let (key, value) = n.split_once(" = ").unwrap();
-    let key = key.as_bytes().try_into().unwrap();
-    let (l, r) = value.trim_matches(['(', ')']).split_once(", ").unwrap();
-    let l = l.as_bytes().try_into().unwrap();
-    let r = r.as_bytes().try_into().unwrap();
-    (key, (l, r))
+    let [k1, k2, k3, _, _, _, _, l1, l2, l3, _, _, r1, r2, r3, _] = *n.as_bytes() else {
+        unreachable!();
+    };
+    ([k1, k2, k3], ([l1, l2, l3], [r1, r2, r3]))
 }
 
 pub fn part1() -> usize {

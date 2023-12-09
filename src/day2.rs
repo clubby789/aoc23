@@ -6,6 +6,7 @@ fn skip_game(game: &str, num: usize) -> &str {
         0..=9 => &game[8..],
         10..=99 => &game[9..],
         100.. => &game[10..],
+        _ => todo!(),
     }
 }
 

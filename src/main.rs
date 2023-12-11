@@ -1,6 +1,6 @@
 use seq_macro::seq;
 use std::time::{Duration, Instant};
-seq!(N in 1..=10 {
+seq!(N in 1..=11 {
     #[allow(unused)]
     mod day~N;
 });
@@ -28,7 +28,7 @@ where
 }
 
 seq! {
-    N in 1..=10 {
+    N in 1..=11 {
         static FUNCS: &[(fn() -> usize, fn() -> usize)] = &[
             #(
                 (day~N::part1 as _, day~N::part2 as _),

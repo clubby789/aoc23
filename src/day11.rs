@@ -16,33 +16,25 @@ impl Space {
                 if i == j {
                     continue;
                 }
-                let mut path = 0;
                 let (start_x, end_x) = if from.0 < to.0 {
                     (from.0, to.0)
                 } else {
                     (to.0, from.0)
                 };
-                for x in start_x..end_x {
-                    if !self.populated_cols[x] {
-                        path += GROWTH
-                    } else {
-                        path += 1
-                    }
-                }
+                let x_expansion = (start_x..end_x)
+                    .filter(|&x| !self.populated_cols[x])
+                    .count();
+                sum += end_x - start_x + x_expansion * (GROWTH - 1);
 
                 let (start_y, end_y) = if from.1 < to.1 {
                     (from.1, to.1)
                 } else {
                     (to.1, from.1)
                 };
-                for y in start_y..end_y {
-                    if !self.populated_rows[y] {
-                        path += GROWTH
-                    } else {
-                        path += 1
-                    }
-                }
-                sum += path;
+                let y_expansion = (start_y..end_y)
+                    .filter(|&y| !self.populated_rows[y])
+                    .count();
+                sum += end_y - start_y + y_expansion * (GROWTH - 1);
             }
         }
         sum

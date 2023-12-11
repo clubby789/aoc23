@@ -3,18 +3,6 @@ use std::{cell::OnceCell, num::NonZeroUsize};
 
 const INPUT: &str = include_str!("inputs/10.txt");
 
-/*
-const INPUT: &str = r#"...........
-.S-------7.
-.|F-----7|.
-.||.....||.
-.||.....||.
-.|L-7.F-J|.
-.|..|.|..|.
-.L--J.L--J.
-............"#;
-*/
-
 struct Grid<'a> {
     src: &'a [u8],
     width: NonZeroUsize,

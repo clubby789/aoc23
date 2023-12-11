@@ -162,7 +162,6 @@ pub fn part1() -> usize {
     (grid.pipes().count() + 1).div_ceil(2)
 }
 
-
 pub fn part2() -> usize {
     let grid = Grid::new(INPUT);
     let mut points: FxHashSet<_> = grid.pipes().collect();

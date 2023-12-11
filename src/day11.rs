@@ -1,24 +1,11 @@
-use rustc_hash::FxHashSet;
 use std::num::NonZeroUsize;
-
-/*const INPUT: &str = r#"...#......
-.......#..
-#.........
-..........
-......#...
-.#........
-.........#
-..........
-.......#..
-#...#....."#;
-*/
 
 const INPUT: &str = include_str!("inputs/11.txt");
 
 struct Space {
     galaxies: Vec<(usize, usize)>,
-    populated_rows: FxHashSet<usize>,
-    populated_cols: FxHashSet<usize>,
+    populated_rows: Vec<bool>,
+    populated_cols: Vec<bool>,
 }
 
 impl Space {
@@ -36,7 +23,7 @@ impl Space {
                     (to.0, from.0)
                 };
                 for x in start_x..end_x {
-                    if !self.populated_cols.contains(&x) {
+                    if !self.populated_cols[x] {
                         path += GROWTH
                     } else {
                         path += 1
@@ -49,7 +36,7 @@ impl Space {
                     (to.1, from.1)
                 };
                 for y in start_y..end_y {
-                    if !self.populated_rows.contains(&y) {
+                    if !self.populated_rows[y] {
                         path += GROWTH
                     } else {
                         path += 1
@@ -64,18 +51,19 @@ impl Space {
 
 fn parse_input(src: &str) -> Space {
     let width =
-        NonZeroUsize::new(INPUT.as_bytes().iter().position(|&b| b == b'\n').unwrap() + 1).unwrap();
-    let mut populated_rows = FxHashSet::default();
-    let mut populated_cols = FxHashSet::default();
-    let galaxies: Vec<_> = INPUT
+        NonZeroUsize::new(src.as_bytes().iter().position(|&b| b == b'\n').unwrap() + 1).unwrap();
+    let galaxies: Vec<_> = src
         .bytes()
         .enumerate()
         .filter(|&(_, b)| b == b'#')
         .map(|(i, _)| (i % width, i / width))
         .collect();
+    let height = galaxies.last().unwrap().1;
+    let mut populated_rows = vec![false; height + 1];
+    let mut populated_cols = vec![false; width.get()];
     for &(x, y) in galaxies.iter() {
-        populated_rows.insert(y);
-        populated_cols.insert(x);
+        populated_rows[y] = true;
+        populated_cols[x] = true;
     }
     Space {
         galaxies,

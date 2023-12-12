@@ -139,7 +139,7 @@ pub fn part2() -> usize {
             new
         };
         let groups = groups.repeat(5);
-        let mut cache = FxHashMap::default();
+        let mut cache = FxHashMap::with_capacity_and_hasher(128, Default::default());
         let amnt = find_places(&mut cache, &groups, &springs);
         sum += amnt.value();
     }

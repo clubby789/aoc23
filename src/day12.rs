@@ -64,25 +64,27 @@ fn find_places<'data>(
         let prev = i.checked_sub(1).and_then(|idx| springs.get(idx));
         let next = springs.get(i + first as usize);
         if let Some(SpringKind::Damaged) = prev {
+            // We're going to have 'unused' # if we continue, so we can break and return
             break;
         }
-        if matches!(next, Some(SpringKind::Damaged)) {
+        if let Some(SpringKind::Damaged) = next {
+            // This next '#' would make our group 1 too long
             continue;
         }
 
         if location.iter().all(SpringKind::maybe_damaged) {
             if rest.is_empty() {
-                if springs
+                // Check if there's more '#' even though we've used all our groups
+                if !springs
                     .get(i + first as usize + 1..)
                     .unwrap_or_default()
                     .iter()
                     .any(|s| matches!(s, SpringKind::Damaged))
                 {
-                    // ...
-                } else {
                     sum += 1;
                 }
             } else {
+                // skip over 'next' - we can't have another group adjacent to this one
                 if let Some(slice) = springs.get(i + first as usize + 1..) {
                     let amnt = find_places(cache, rest, slice);
                     if let CacheResult::Miss(val) = amnt {
@@ -91,9 +93,6 @@ fn find_places<'data>(
                     sum += amnt.value();
                 }
             }
-        }
-        if matches!(location[0], SpringKind::Damaged) {
-            break;
         }
     }
     CacheResult::Miss(sum)

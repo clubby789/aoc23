@@ -1,5 +1,6 @@
 use rustc_hash::FxHashMap;
 use std::fmt::{Formatter, Write};
+use std::hash::{Hash, Hasher};
 
 const INPUT: &str = include_str!("inputs/12.txt");
 
@@ -23,6 +24,16 @@ impl SpringKind {
     }
 }
 
+#[derive(PartialEq, Eq)]
+struct CacheKey<'a>(&'a [u8], &'a [SpringKind]);
+
+impl<'a> Hash for CacheKey<'a> {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_usize(self.0.iter().map(|b| *b as usize).sum());
+        state.write_usize(self.1.iter().map(|b| *b as usize).sum());
+    }
+}
+
 enum CacheResult {
     Hit(usize),
     Miss(usize),
@@ -37,11 +48,11 @@ impl CacheResult {
 }
 
 fn find_places<'data>(
-    cache: &mut FxHashMap<(&'data [u8], &'data [SpringKind]), usize>,
+    cache: &mut FxHashMap<CacheKey<'data>, usize>,
     groups: &'data [u8],
     springs: &'data [SpringKind],
 ) -> CacheResult {
-    if let Some(cached) = cache.get(&(groups, springs)) {
+    if let Some(cached) = cache.get(&CacheKey(groups, springs)) {
         return CacheResult::Hit(*cached);
     }
     let Some((&first, rest)) = groups.split_first() else {
@@ -75,7 +86,7 @@ fn find_places<'data>(
                 if let Some(slice) = springs.get(i + first as usize + 1..) {
                     let amnt = find_places(cache, rest, slice);
                     if let CacheResult::Miss(val) = amnt {
-                        cache.insert((rest, slice), val);
+                        cache.insert(CacheKey(rest, slice), val);
                     }
                     sum += amnt.value();
                 }

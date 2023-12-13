@@ -25,7 +25,7 @@ impl<'a> Pattern<'a> {
 }
 
 fn find_reflection_value(pat: impl AsRef<[u8]>, ignore: Option<usize>) -> Option<usize> {
-    fn row_is_mirrored(row: &[u8], mirror: usize) -> bool {
+    fn is_mirrored<T: PartialEq>(row: &[T], mirror: usize) -> bool {
         let (mut before, mut after) = row.split_at(mirror);
         while let Some(((before_last, before_rest), (after_first, after_rest))) =
             before.split_last().zip(after.split_first())
@@ -42,27 +42,13 @@ fn find_reflection_value(pat: impl AsRef<[u8]>, ignore: Option<usize>) -> Option
     // Try each column
     let rows: Vec<_> = pat.rows().collect();
     for reflect_col in 1..pat.width - 1 {
-        if rows.iter().all(|row| row_is_mirrored(row, reflect_col)) && ignore != Some(reflect_col) {
+        if rows.iter().all(|row| is_mirrored(row, reflect_col)) && ignore != Some(reflect_col) {
             return Some(reflect_col);
         }
     }
 
-    fn rows_are_mirrored(rows: &[&[u8]], mirror: usize) -> bool {
-        let (mut before, mut after) = rows.split_at(mirror);
-        while let Some(((&before_last, before_rest), (&after_first, after_rest))) =
-            before.split_last().zip(after.split_first())
-        {
-            if before_last != after_first {
-                return false;
-            }
-            before = before_rest;
-            after = after_rest;
-        }
-        true
-    }
-
     for reflect_row in 1..pat.height {
-        if rows_are_mirrored(&rows, reflect_row) && ignore != Some(100 * reflect_row) {
+        if is_mirrored(&rows, reflect_row) && ignore != Some(100 * reflect_row) {
             return Some(100 * reflect_row);
         }
     }

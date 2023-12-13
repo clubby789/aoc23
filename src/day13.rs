@@ -25,24 +25,23 @@ impl<'a> Pattern<'a> {
 }
 
 fn find_reflection_value(pat: impl AsRef<[u8]>, ignore: Option<usize>) -> Option<usize> {
+    fn row_is_mirrored(row: &[u8], mirror: usize) -> bool {
+        let (mut before, mut after) = row.split_at(mirror);
+        while let Some(((before_last, before_rest), (after_first, after_rest))) =
+            before.split_last().zip(after.split_first())
+        {
+            if before_last != after_first {
+                return false;
+            }
+            before = before_rest;
+            after = after_rest;
+        }
+        true
+    }
     let pat = Pattern::new(pat.as_ref());
     // Try each column
-    'columns: for reflect_col in 1..pat.width - 1 {
-        // check each row matches
-        for row in pat.rows() {
-            let (before, after) = row.split_at(reflect_col);
-            let (before, after) = if before.len() > after.len() {
-                (&before[reflect_col - after.len()..], after)
-            } else {
-                (before, &after[..before.len()])
-            };
-            debug_assert_eq!(before.len(), after.len());
-            if before.iter().ne(after.iter().rev()) {
-                continue 'columns;
-            }
-        }
-        // all rows reflected along this column
-        if ignore != Some(reflect_col) {
+    for reflect_col in 1..pat.width - 1 {
+        if pat.rows().all(|row| row_is_mirrored(row, reflect_col)) && ignore != Some(reflect_col) {
             return Some(reflect_col);
         }
     }

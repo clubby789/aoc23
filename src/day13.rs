@@ -40,35 +40,29 @@ fn find_reflection_value(pat: impl AsRef<[u8]>, ignore: Option<usize>) -> Option
     }
     let pat = Pattern::new(pat.as_ref());
     // Try each column
+    let rows: Vec<_> = pat.rows().collect();
     for reflect_col in 1..pat.width - 1 {
-        if pat.rows().all(|row| row_is_mirrored(row, reflect_col)) && ignore != Some(reflect_col) {
+        if rows.iter().all(|row| row_is_mirrored(row, reflect_col)) && ignore != Some(reflect_col) {
             return Some(reflect_col);
         }
     }
 
-    // Try each row
-    'rows: for reflect_row in 1..pat.height {
-        let rows_after = pat.height - reflect_row;
-        if rows_after > reflect_row {
-            // Reflection in the first half
-            let before = pat.rows().take(reflect_row);
-            let after = pat.rows().skip(reflect_row).take(reflect_row);
-            for (b, a) in before.zip(after.rev()) {
-                if b != a {
-                    continue 'rows;
-                }
+    fn rows_are_mirrored(rows: &[&[u8]], mirror: usize) -> bool {
+        let (mut before, mut after) = rows.split_at(mirror);
+        while let Some(((&before_last, before_rest), (&after_first, after_rest))) =
+            before.split_last().zip(after.split_first())
+        {
+            if before_last != after_first {
+                return false;
             }
-        } else {
-            // Reflection in the second half
-            let before = pat.rows().skip(reflect_row - rows_after).take(rows_after);
-            let after = pat.rows().skip(reflect_row);
-            for (b, a) in before.zip(after.rev()) {
-                if b != a {
-                    continue 'rows;
-                }
-            }
+            before = before_rest;
+            after = after_rest;
         }
-        if ignore != Some(100 * reflect_row) {
+        true
+    }
+
+    for reflect_row in 1..pat.height {
+        if rows_are_mirrored(&rows, reflect_row) && ignore != Some(100 * reflect_row) {
             return Some(100 * reflect_row);
         }
     }

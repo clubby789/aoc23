@@ -115,23 +115,27 @@ impl Grid {
             self.content.swap(i, cur);
         }
     }
+
+    pub fn weight(&self) -> usize {
+        self.content
+            .chunks(self.width)
+            .rev()
+            .enumerate()
+            .map(|(i, chunk)| {
+                (i + 1)
+                    * chunk
+                        .iter()
+                        .filter(|c| matches!(c, CellKind::Round))
+                        .count()
+            })
+            .sum()
+    }
 }
 
 pub fn part1() -> usize {
     let mut grid = Grid::new(INPUT);
     grid.slide_up();
-    grid.content
-        .chunks(grid.width)
-        .rev()
-        .enumerate()
-        .map(|(i, chunk)| {
-            (i + 1)
-                * chunk
-                    .iter()
-                    .filter(|c| matches!(c, CellKind::Round))
-                    .count()
-        })
-        .sum()
+    grid.weight()
 }
 
 pub fn part2() -> usize {
@@ -157,16 +161,5 @@ pub fn part2() -> usize {
         grid.slide_right();
         i += 1;
     }
-    grid.content
-        .chunks(grid.width)
-        .rev()
-        .enumerate()
-        .map(|(i, chunk)| {
-            (i + 1)
-                * chunk
-                    .iter()
-                    .filter(|c| matches!(c, CellKind::Round))
-                    .count()
-        })
-        .sum()
+    grid.weight()
 }

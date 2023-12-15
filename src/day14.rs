@@ -1,11 +1,12 @@
 use rustc_hash::FxHashMap;
 use std::collections::hash_map::Entry;
 use std::fmt::{Debug, Formatter, Write};
+use std::hash::{Hash, Hasher};
 
 const INPUT: &str = include_str!("inputs/14.txt");
 
 #[repr(u8)]
-#[derive(Copy, Clone, Eq, PartialEq, Hash)]
+#[derive(Copy, Clone, Eq, PartialEq)]
 enum CellKind {
     Round = b'O',
     Cube = b'#',
@@ -18,7 +19,7 @@ impl Debug for CellKind {
     }
 }
 
-#[derive(Clone, Eq, PartialEq, Hash)]
+#[derive(Clone, Eq, PartialEq)]
 struct Grid {
     content: Vec<CellKind>,
     width: usize,
@@ -138,13 +139,19 @@ pub fn part1() -> usize {
     grid.weight()
 }
 
+impl Hash for Grid {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        state.write_usize(self.weight())
+    }
+}
+
 pub fn part2() -> usize {
     let mut grid = Grid::new(INPUT);
     let mut cache = FxHashMap::default();
 
     let mut i = 0;
     while i < 1000000000 {
-        match cache.entry(grid.content.clone()) {
+        match cache.entry(grid.clone()) {
             Entry::Occupied(occ) => {
                 let cycle_len = i - *occ.get();
                 while i + cycle_len < 1000000000 {

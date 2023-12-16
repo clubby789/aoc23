@@ -21,12 +21,13 @@ pub fn part2() -> usize {
             } else {
                 map[idx].push((lbl, num));
             }
-        } else if let Some((lbl, _)) = operation.split_once('-') {
+        } else if let Some(lbl) = operation.strip_suffix('-') {
             let idx = hash_string(lbl);
             if let Some(pos) = map[idx].iter().position(|(lbl2, _)| *lbl2 == lbl) {
                 map[idx].remove(pos);
             }
         } else {
+            #[cfg(debug_assertions)]
             unreachable!()
         };
     }

@@ -1,4 +1,5 @@
-use rustc_hash::FxHashSet;
+use rustc_hash::FxHashMap;
+use std::collections::hash_map::Entry;
 
 const INPUT: &str = include_str!("inputs/16.txt");
 
@@ -10,8 +11,9 @@ struct Grid<'a> {
 }
 
 #[derive(Copy, Clone, PartialEq, Debug, Hash, Eq)]
+#[repr(u8)]
 enum Direction {
-    North,
+    North = 0,
     East,
     South,
     West,
@@ -36,8 +38,10 @@ type Pos = (usize, usize);
 
 fn solve(grid: &Grid, mut pos: Pos, mut dir: Direction) -> usize {
     let mut points_todo: Vec<(Pos, Direction)> = Vec::new();
-    let mut visited: FxHashSet<(Pos, Direction)> =
-        FxHashSet::with_capacity_and_hasher(grid.src.len(), Default::default());
+    // The array corresponds to the 4 directions (N, E, S, W).
+    // If a Pos has been visited going North before, [0] will be `true`
+    let mut visited: FxHashMap<Pos, [bool; 4]> =
+        FxHashMap::with_capacity_and_hasher(grid.src.len(), Default::default());
     fn next_pos((x, y): Pos, dir: Direction, grid: &Grid) -> Option<Pos> {
         Some(match dir {
             Direction::North if y > 0 => (x, y - 1),
@@ -49,12 +53,22 @@ fn solve(grid: &Grid, mut pos: Pos, mut dir: Direction) -> usize {
     }
 
     loop {
-        if !visited.insert((pos, dir)) {
-            if let Some((npos, ndir)) = points_todo.pop() {
-                pos = npos;
-                dir = ndir
-            } else {
-                break;
+        match visited.entry(pos) {
+            Entry::Occupied(o) if o.get()[dir as usize] => {
+                if let Some((npos, ndir)) = points_todo.pop() {
+                    pos = npos;
+                    dir = ndir
+                } else {
+                    break;
+                }
+            }
+            Entry::Occupied(mut o) => {
+                o.get_mut()[dir as usize] = true;
+            }
+            Entry::Vacant(mut v) => {
+                let mut directions = [false; 4];
+                directions[dir as usize] = true;
+                v.insert(directions);
             }
         }
         let cell = grid.get(pos).unwrap();
@@ -89,8 +103,7 @@ fn solve(grid: &Grid, mut pos: Pos, mut dir: Direction) -> usize {
             break;
         }
     }
-    let pos: FxHashSet<_> = visited.into_iter().map(|(pos, _)| pos).collect();
-    pos.len()
+    visited.len()
 }
 
 pub fn part1() -> usize {

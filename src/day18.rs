@@ -1,6 +1,6 @@
 const INPUT: &str = include_str!("inputs/18.txt");
 
-fn solve_points(path: &[(i64, i64)], points_on_path: i64) -> usize {
+fn solve_points(path: &[(i64, i64)], points_on_path: u64) -> usize {
     let mut area = 0;
     for i in 0..path.len() {
         let j = (i + 1) % path.len();
@@ -14,24 +14,66 @@ fn solve_points(path: &[(i64, i64)], points_on_path: i64) -> usize {
     // A + 1 = i + b/2
     let b_2 = points_on_path / 2;
     let area = area.abs() / 2;
-    let interior = area + 1 - b_2;
-    (interior + points_on_path) as usize
+    let interior = area + 1 - b_2 as i64;
+    (interior + points_on_path as i64) as usize
+}
+
+struct Trench<'a, F> {
+    input: &'a [u8],
+    position: usize,
+    location: (i64, i64),
+    f: F,
+    done: bool,
+}
+
+impl<'a, F> Trench<'a, F>
+where
+    F: FnMut(&[u8], (i64, i64)) -> ((i64, i64), usize),
+{
+    pub fn new(source: &'a str, f: F) -> Self {
+        Self {
+            input: source.as_bytes(),
+            position: 0,
+            location: (0, 0),
+            done: false,
+            f,
+        }
+    }
+}
+
+impl<'a, F> Iterator for Trench<'a, F>
+where
+    F: FnMut(&[u8], (i64, i64)) -> ((i64, i64), usize),
+{
+    type Item = (i64, i64);
+    fn next(&mut self) -> Option<Self::Item> {
+        let Some(line) = self.input.get(self.position..) else {
+            return if self.done {
+                None
+            } else {
+                self.done = true;
+                Some((0, 0))
+            };
+        };
+        let ret = self.location;
+        let (new_loc, len) = (self.f)(line, ret);
+        self.position += len;
+        self.location = new_loc;
+        Some(ret)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (1, Some(self.input.len() / 14))
+    }
 }
 
 pub fn part1() -> usize {
-    let mut path = Vec::with_capacity(INPUT.len() / 8);
-    let mut points_on_path = 0;
-    path.push((0, 0));
-    let input = INPUT.as_bytes();
-    let mut position = 0;
-    while let Some(line) = input.get(position..) {
+    let path = Trench::new(INPUT, |line, last| {
         let (direction, amnt, length) = match line {
             &[dir, _, amnt, b' ', ..] => (dir, (amnt & 0b1111) as i64, 14),
             &[dir, _, hi, lo, ..] => (dir, ((hi & 0b1111) * 10 + (lo & 0b1111)) as i64, 15),
             _ => unreachable!(),
         };
-        position += length;
-        let last = *path.last().unwrap();
         let diff = match direction {
             b'U' => (0, -amnt),
             b'R' => (amnt, 0),
@@ -39,19 +81,22 @@ pub fn part1() -> usize {
             b'L' => (-amnt, 0),
             _ => unreachable!(),
         };
-        points_on_path += amnt;
-        path.push((last.0 + diff.0, last.1 + diff.1))
-    }
+        ((last.0 + diff.0, last.1 + diff.1), length)
+    })
+    .collect::<Vec<_>>();
+    let points_on_path = path
+        .windows(2)
+        .map(|window| {
+            let dx = window[1].0.abs_diff(window[0].0);
+            let dy = window[1].1.abs_diff(window[0].1);
+            dx + dy
+        })
+        .sum();
     solve_points(&path, points_on_path)
 }
 
 pub fn part2() -> usize {
-    let mut path = Vec::with_capacity(INPUT.len() / 14 + 1);
-    let mut points_on_path = 0;
-    path.push((0, 0));
-    let input = INPUT.as_bytes();
-    let mut position = 0;
-    while let Some(line) = input.get(position..) {
+    let path = Trench::new(INPUT, |line, last| {
         fn parse_hex(dir: u8, amnt: [u8; 5]) -> (u8, i64) {
             const fn hex_table() -> [u8; 255] {
                 let mut table = [0; 255];
@@ -88,8 +133,6 @@ pub fn part2() -> usize {
             }
             _ => unreachable!(),
         };
-        position += len;
-        let last = *path.last().unwrap();
         let diff = match direction {
             b'0' => (0, -amnt),
             b'1' => (amnt, 0),
@@ -97,8 +140,16 @@ pub fn part2() -> usize {
             b'3' => (-amnt, 0),
             _ => unreachable!(),
         };
-        points_on_path += amnt;
-        path.push((last.0 + diff.0, last.1 + diff.1));
-    }
+        ((last.0 + diff.0, last.1 + diff.1), len)
+    })
+    .collect::<Vec<_>>();
+    let points_on_path = path
+        .windows(2)
+        .map(|window| {
+            let dx = window[1].0.abs_diff(window[0].0);
+            let dy = window[1].1.abs_diff(window[0].1);
+            dx + dy
+        })
+        .sum();
     solve_points(&path, points_on_path)
 }

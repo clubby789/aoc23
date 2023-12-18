@@ -96,8 +96,8 @@ pub fn part1() -> usize {
 pub fn part2() -> usize {
     let trench = Trench::new(INPUT, |line, last| {
         fn parse_hex(dir: u8, amnt: [u8; 5]) -> (u8, i64) {
-            const HEX_TABLE: [u8; 255] = {
-                let mut table = [0; 255];
+            const HEX_TABLE: [u8; 256] = {
+                let mut table = [0; 256];
                 table[b'0' as usize] = 0;
                 table[b'1' as usize] = 1;
                 table[b'2' as usize] = 2;
@@ -116,9 +116,11 @@ pub fn part2() -> usize {
                 table[b'f' as usize] = 15;
                 table
             };
-            let amnt = amnt
-                .into_iter()
-                .fold(0i64, |acc, x| (acc << 4) + HEX_TABLE[x as usize] as i64);
+            let amnt = (HEX_TABLE[amnt[0] as usize] as i64) << 4 * 4
+                | (HEX_TABLE[amnt[1] as usize] as i64) << 4 * 3
+                | (HEX_TABLE[amnt[2] as usize] as i64) << 4 * 2
+                | (HEX_TABLE[amnt[3] as usize] as i64) << 4 * 1
+                | HEX_TABLE[amnt[4] as usize] as i64;
             (dir, amnt)
         }
         let ((direction, amnt), len) = match line {

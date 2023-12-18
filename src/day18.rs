@@ -68,10 +68,6 @@ where
         self.location = new_loc;
         Some(ret)
     }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        (1, Some(self.input.len() / 14))
-    }
 }
 
 pub fn part1() -> usize {
@@ -124,10 +120,10 @@ pub fn part2() -> usize {
             (dir, amnt)
         }
         let ((direction, amnt), len) = match line {
-            &[_, b' ', _, b' ', _, _, a, b, c, d, e, dir, ..] => {
+            &[_, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
                 (parse_hex(dir, [a, b, c, d, e]), 14)
             }
-            &[_, b' ', _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
+            &[_, _, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
                 (parse_hex(dir, [a, b, c, d, e]), 15)
             }
             _ => unreachable!(),

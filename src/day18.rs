@@ -68,10 +68,10 @@ pub fn part2() -> usize {
             (dir, amnt)
         }
         let (dir, amnt) = match line {
-            &[_, _, _, b' ', b'(', b'#', a, b, c, d, e, dir, b')'] => {
+            &[.., a, b, c, d, e, dir, _] => {
                 parse_hex(dir, [a, b, c, d, e])
             }
-            &[_, _, _, _, b' ', b'(', b'#', a, b, c, d, e, dir, b')'] => {
+            &[.., a, b, c, d, e, dir, _] => {
                 parse_hex(dir, [a, b, c, d, e])
             }
             _ => unreachable!(),

@@ -7,10 +7,11 @@ fn solve_points(path: impl Iterator<Item = (i64, i64)>) -> usize {
     let mut prev = path.next().unwrap();
     while let Some(cur) = path.next() {
         points_on_path += {
-            let dx = cur.0.abs_diff(prev.0);
-            if dx > 0 { dx } else {
-                cur.1.abs_diff(prev.1)
+            #[inline(always)]
+            fn branchless_abs(a: i64) -> i64 {
+                (a + (a >> 63)) ^ (a >> 63)
             }
+            branchless_abs((prev.0 - cur.0) ^ (prev.1 - cur.1))
         };
         area += (prev.0 * cur.1) - (prev.1 * cur.0);
         prev = cur;
@@ -21,8 +22,8 @@ fn solve_points(path: impl Iterator<Item = (i64, i64)>) -> usize {
     // Total points = A + 1 - b/2 + b
     let b_2 = points_on_path / 2;
     let area = area.abs() / 2;
-    let interior = area + 1 - b_2 as i64;
-    (interior + points_on_path as i64) as usize
+    let interior = area + 1 - b_2;
+    (interior + points_on_path) as usize
 }
 
 struct Trench<'a, F> {
@@ -77,7 +78,7 @@ pub fn part1() -> usize {
             _ => {
                 debug_assert_eq!(direction, b'L');
                 (-amnt, 0)
-            },
+            }
         };
         ((last.0 + diff.0, last.1 + diff.1), length)
     });
@@ -115,9 +116,7 @@ pub fn part2() -> usize {
             (dir, amnt)
         }
         let ((direction, amnt), len) = match line {
-            &[_, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
-                (parse_hex(dir, [a, b, c, d, e]), 14)
-            }
+            &[_, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => (parse_hex(dir, [a, b, c, d, e]), 14),
             &[_, _, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
                 (parse_hex(dir, [a, b, c, d, e]), 15)
             }
@@ -130,7 +129,7 @@ pub fn part2() -> usize {
             _ => {
                 debug_assert_eq!(direction, b'3');
                 (-amnt, 0)
-            },
+            }
         };
         ((last.0 + diff.0, last.1 + diff.1), len)
     });

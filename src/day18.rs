@@ -1,6 +1,7 @@
 const INPUT: &str = include_str!("inputs/18.txt");
 
-fn solve_points(mut path: impl Iterator<Item = (i64, i64)>) -> usize {
+fn solve_points(path: impl Iterator<Item = (i64, i64)>) -> usize {
+    let mut path = path.chain(std::iter::once((0, 0)));
     let mut area = 0;
     let mut points_on_path = 0;
     let mut prev = path.next().unwrap();
@@ -28,7 +29,6 @@ struct Trench<'a, F> {
     position: usize,
     location: (i64, i64),
     f: F,
-    done: bool,
 }
 
 impl<'a, F> Trench<'a, F>
@@ -40,7 +40,6 @@ where
             input: source.as_bytes(),
             position: 0,
             location: (0, 0),
-            done: false,
             f,
         }
     }
@@ -54,14 +53,7 @@ where
     // perf says this saves about 15% for part 2
     #[inline(always)]
     fn next(&mut self) -> Option<Self::Item> {
-        let Some(line) = self.input.get(self.position..) else {
-            return if self.done {
-                None
-            } else {
-                self.done = true;
-                Some((0, 0))
-            };
-        };
+        let line = self.input.get(self.position..)?;
         let ret = self.location;
         let (new_loc, len) = (self.f)(line, ret);
         self.position += len;

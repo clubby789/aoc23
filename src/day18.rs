@@ -73,8 +73,10 @@ pub fn part1() -> usize {
             b'U' => (0, -amnt),
             b'R' => (amnt, 0),
             b'D' => (0, amnt),
-            b'L' => (-amnt, 0),
-            _ => unreachable!(),
+            _ => {
+                debug_assert_eq!(direction, b'L');
+                (-amnt, 0)
+            },
         };
         ((last.0 + diff.0, last.1 + diff.1), length)
     });
@@ -124,8 +126,10 @@ pub fn part2() -> usize {
             b'0' => (0, -amnt),
             b'1' => (amnt, 0),
             b'2' => (0, amnt),
-            b'3' => (-amnt, 0),
-            _ => unreachable!(),
+            _ => {
+                debug_assert_eq!(direction, b'3');
+                (-amnt, 0)
+            },
         };
         ((last.0 + diff.0, last.1 + diff.1), len)
     });

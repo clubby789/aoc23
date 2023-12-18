@@ -8,8 +8,9 @@ fn solve_points(path: impl Iterator<Item = (i64, i64)>) -> usize {
     while let Some(cur) = path.next() {
         points_on_path += {
             let dx = cur.0.abs_diff(prev.0);
-            let dy = cur.1.abs_diff(prev.1);
-            dx + dy
+            if dx > 0 { dx } else {
+                cur.1.abs_diff(prev.1)
+            }
         };
         area += (prev.0 * cur.1) - (prev.1 * cur.0);
         prev = cur;

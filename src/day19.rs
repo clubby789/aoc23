@@ -30,11 +30,12 @@ enum Cmp {
 }
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
+#[repr(u8)]
 enum Prop {
-    X,
-    M,
-    A,
-    S,
+    X = b'x',
+    M = b'm',
+    A = b'a',
+    S = b's',
 }
 
 #[derive(Debug)]
@@ -75,8 +76,10 @@ fn parse_workflow(input: &str) -> (&str, Workflow<'_>) {
                     b'x' => Prop::X,
                     b'm' => Prop::M,
                     b'a' => Prop::A,
-                    b's' => Prop::S,
-                    _ => unreachable!(),
+                    _ => {
+                        debug_assert_eq!(*prop, b's');
+                        Prop::S
+                    }
                 };
                 let cmp = if *cmp == b'<' {
                     Cmp::Lesser

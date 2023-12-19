@@ -187,26 +187,12 @@ impl SymbolicPart {
 // first range is the matching range, second is the non-matching one
 fn split_range(range: &Range<u16>, cmp: Cmp, value: u16) -> Option<(Range<u16>, Range<u16>)> {
     match cmp {
-        // (50..100), < 10
-        // will never match, return empty ranges
-        Cmp::Lesser if value <= range.start => Some((0..0, 0..0)),
         // (1..100),  < 5
         // may match, split range into matching and not
         Cmp::Lesser if value < range.end => Some((range.start..value, value..range.end)),
-
-        // (1..100), < 100
-        // will always match, no need to split
-        Cmp::Lesser if value >= range.end => None,
-
-        // (50..100), > 100
-        // will never match, return empty ranges
-        Cmp::Greater if value >= range.end => Some((0..0, 0..0)),
         // (1..100),  > 5
         // may match, split range into matching and not
         Cmp::Greater if value < range.end => Some((value + 1..range.end, range.start..value + 1)),
-        // (2..100), > 1
-        // will always match, no need to split
-        Cmp::Lesser if value >= range.end => None,
         _ => unreachable!("{cmp:?}, {range:?}, {value}"),
     }
 }

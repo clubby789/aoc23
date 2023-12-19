@@ -88,7 +88,7 @@ pub fn part1() -> usize {
 pub fn part2() -> usize {
     let trench = Trench::new(INPUT, |line, last| {
         fn parse_hex(dir: u8, amnt: [u8; 5]) -> (u8, i64) {
-            const HEX_TABLE: [u8; 256] = {
+            const HEX_TABLE_LO: [u8; 256] = {
                 let mut table = [0; 256];
                 table[b'0' as usize] = 0;
                 table[b'1' as usize] = 1;
@@ -108,11 +108,31 @@ pub fn part2() -> usize {
                 table[b'f' as usize] = 15;
                 table
             };
-            let amnt = (HEX_TABLE[amnt[0] as usize] as i64) << 4 * 4
-                | (HEX_TABLE[amnt[1] as usize] as i64) << 4 * 3
-                | (HEX_TABLE[amnt[2] as usize] as i64) << 4 * 2
-                | (HEX_TABLE[amnt[3] as usize] as i64) << 4 * 1
-                | HEX_TABLE[amnt[4] as usize] as i64;
+            const HEX_TABLE_HI: [u8; 256] = {
+                let mut table = [0; 256];
+                table[b'0' as usize] = 0 << 4;
+                table[b'1' as usize] = 1 << 4;
+                table[b'2' as usize] = 2 << 4;
+                table[b'3' as usize] = 3 << 4;
+                table[b'4' as usize] = 4 << 4;
+                table[b'5' as usize] = 5 << 4;
+                table[b'6' as usize] = 6 << 4;
+                table[b'7' as usize] = 7 << 4;
+                table[b'8' as usize] = 8 << 4;
+                table[b'9' as usize] = 9 << 4;
+                table[b'a' as usize] = 10 << 4;
+                table[b'b' as usize] = 11 << 4;
+                table[b'c' as usize] = 12 << 4;
+                table[b'd' as usize] = 13 << 4;
+                table[b'e' as usize] = 14 << 4;
+                table[b'f' as usize] = 15 << 4;
+                table
+            };
+            let amnt = (HEX_TABLE_LO[amnt[0] as usize] as i64) << 4 * 4
+                | (HEX_TABLE_HI[amnt[1] as usize] as i64) << 4 * 2
+                | (HEX_TABLE_LO[amnt[2] as usize] as i64) << 4 * 2
+                | (HEX_TABLE_HI[amnt[3] as usize] as i64)
+                | HEX_TABLE_LO[amnt[4] as usize] as i64;
             (dir, amnt)
         }
         let ((direction, amnt), len) = match line {

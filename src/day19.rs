@@ -61,64 +61,62 @@ fn parse_dest(input: &str) -> WorkflowDest<'_> {
     }
 }
 
-fn parse(input: &str) -> (Vec<Part>, FxHashMap<&str, Workflow<'_>>) {
-    let (workflows, parts) = input.split_once("\n\n").unwrap();
-    let workflows = workflows
-        .lines()
-        .map(|line| {
-            let (name, rest) = line.split_once('{').unwrap();
-            let rest = rest.strip_suffix('}').unwrap();
-            let rules = rest
-                .split(",")
-                .map(|step| {
-                    if let Some((check, dest)) = step.split_once(':') {
-                        let [prop, cmp, value @ ..] = check.as_bytes() else {
-                            unreachable!()
-                        };
-                        let prop = match prop {
-                            b'x' => Prop::X,
-                            b'm' => Prop::M,
-                            b'a' => Prop::A,
-                            b's' => Prop::S,
-                            _ => unreachable!(),
-                        };
-                        let cmp = if *cmp == b'<' {
-                            Cmp::Lesser
-                        } else {
-                            Cmp::Greater
-                        };
-                        debug_assert!(value.iter().all(|c| c.is_ascii_digit()));
-                        let value = value
-                            .iter()
-                            .fold(0usize, |acc, x| (acc * 10) + (*x & 0b1111) as usize);
-                        let dest = parse_dest(dest);
-                        WorkflowStep::Part {
-                            prop,
-                            cmp,
-                            value,
-                            dest,
-                        }
-                    } else {
-                        WorkflowStep::Final(parse_dest(step))
-                    }
-                })
-                .collect();
-            (name, Workflow { rules })
-        })
-        .collect();
-    let parts = parts
-        .lines()
-        .map(|line| {
-            let line = line.strip_prefix('{').unwrap().strip_suffix('}').unwrap();
-            let mut iter = line.split(",").map(|c| c.split_once('=').unwrap().1);
-            Part {
-                x: iter.next().unwrap().parse().unwrap(),
-                m: iter.next().unwrap().parse().unwrap(),
-                a: iter.next().unwrap().parse().unwrap(),
-                s: iter.next().unwrap().parse().unwrap(),
+fn parse_workflow(input: &str) -> (&str, Workflow<'_>) {
+    let (name, rest) = input.split_once('{').unwrap();
+    let rest = rest.strip_suffix('}').unwrap();
+    let rules = rest
+        .split(",")
+        .map(|step| {
+            if let Some((check, dest)) = step.split_once(':') {
+                let [prop, cmp, value @ ..] = check.as_bytes() else {
+                    unreachable!()
+                };
+                let prop = match prop {
+                    b'x' => Prop::X,
+                    b'm' => Prop::M,
+                    b'a' => Prop::A,
+                    b's' => Prop::S,
+                    _ => unreachable!(),
+                };
+                let cmp = if *cmp == b'<' {
+                    Cmp::Lesser
+                } else {
+                    Cmp::Greater
+                };
+                debug_assert!(value.iter().all(|c| c.is_ascii_digit()));
+                let value = value
+                    .iter()
+                    .fold(0usize, |acc, x| (acc * 10) + (*x & 0b1111) as usize);
+                let dest = parse_dest(dest);
+                WorkflowStep::Part {
+                    prop,
+                    cmp,
+                    value,
+                    dest,
+                }
+            } else {
+                WorkflowStep::Final(parse_dest(step))
             }
         })
         .collect();
+    (name, Workflow { rules })
+}
+
+fn parse_part(input: &str) -> Part {
+    let line = input.strip_prefix('{').unwrap().strip_suffix('}').unwrap();
+    let mut iter = line.split(",").map(|c| c.split_once('=').unwrap().1);
+    Part {
+        x: iter.next().unwrap().parse().unwrap(),
+        m: iter.next().unwrap().parse().unwrap(),
+        a: iter.next().unwrap().parse().unwrap(),
+        s: iter.next().unwrap().parse().unwrap(),
+    }
+}
+
+fn parse(input: &str) -> (Vec<Part>, FxHashMap<&str, Workflow<'_>>) {
+    let (workflows, parts) = input.split_once("\n\n").unwrap();
+    let workflows = workflows.lines().map(parse_workflow).collect();
+    let parts = parts.lines().map(parse_part).collect();
     (parts, workflows)
 }
 
@@ -143,7 +141,6 @@ pub fn part1() -> usize {
         .map(|part| {
             let mut cur = WorkflowDest::Workflow("in");
             while let WorkflowDest::Workflow(name) = cur {
-                // let wf = workflows[&name];
                 for step in &workflows[&name].rules {
                     match step {
                         &WorkflowStep::Part {
@@ -219,7 +216,13 @@ fn split_range(
 }
 
 pub fn part2() -> usize {
-    let (_, workflows) = parse(INPUT);
+    let workflows: FxHashMap<_, _> = INPUT
+        .split_once("\n\n")
+        .unwrap()
+        .0
+        .lines()
+        .map(parse_workflow)
+        .collect();
     // stack of a workflow, the current step we're on, and the symbolic part
     // before being constrained by this step
     let mut stack = vec![(
@@ -270,9 +273,7 @@ pub fn part2() -> usize {
                 } = r1;
                 match dest {
                     WorkflowDest::Reject => (),
-                    WorkflowDest::Accept => {
-                        sum += part2.count()
-                    }
+                    WorkflowDest::Accept => sum += part2.count(),
                     WorkflowDest::Workflow(dest) => stack.push((&workflows[&dest], 0, part2)),
                 }
                 *field = r2;

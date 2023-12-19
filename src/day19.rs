@@ -4,15 +4,15 @@ use std::ops::Range;
 const INPUT: &str = include_str!("inputs/19.txt");
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
 struct Part {
-    x: usize,
-    m: usize,
-    a: usize,
-    s: usize,
+    x: u16,
+    m: u16,
+    a: u16,
+    s: u16,
 }
 
 impl Part {
     pub fn sum(&self) -> usize {
-        self.x + self.m + self.a + self.s
+        self.x as usize + self.m as usize + self.a as usize + self.s as usize
     }
 }
 
@@ -42,7 +42,7 @@ enum WorkflowStep<'a> {
     Part {
         prop: Prop,
         cmp: Cmp,
-        value: usize,
+        value: u16,
         dest: WorkflowDest<'a>,
     },
     Final(WorkflowDest<'a>),
@@ -86,7 +86,7 @@ fn parse_workflow(input: &str) -> (&str, Workflow<'_>) {
                 debug_assert!(value.iter().all(|c| c.is_ascii_digit()));
                 let value = value
                     .iter()
-                    .fold(0usize, |acc, x| (acc * 10) + (*x & 0b1111) as usize);
+                    .fold(0u16, |acc, x| (acc * 10) + (*x & 0b1111) as u16);
                 let dest = parse_dest(dest);
                 WorkflowStep::Part {
                     prop,
@@ -121,7 +121,7 @@ fn parse(input: &str) -> (Vec<Part>, FxHashMap<&str, Workflow<'_>>) {
 }
 
 // return `true` if the check passes
-fn run_step(part: Part, prop: Prop, cmp: Cmp, value: usize) -> bool {
+fn run_step(part: Part, prop: Prop, cmp: Cmp, value: u16) -> bool {
     let part_value = match prop {
         Prop::X => part.x,
         Prop::M => part.m,
@@ -172,10 +172,10 @@ pub fn part1() -> usize {
 
 #[derive(Clone, Debug)]
 struct SymbolicPart {
-    x: Range<usize>,
-    m: Range<usize>,
-    a: Range<usize>,
-    s: Range<usize>,
+    x: Range<u16>,
+    m: Range<u16>,
+    a: Range<u16>,
+    s: Range<u16>,
 }
 
 impl SymbolicPart {
@@ -185,11 +185,7 @@ impl SymbolicPart {
 }
 
 // first range is the matching range, second is the non-matching one
-fn split_range(
-    range: &Range<usize>,
-    cmp: Cmp,
-    value: usize,
-) -> Option<(Range<usize>, Range<usize>)> {
+fn split_range(range: &Range<u16>, cmp: Cmp, value: u16) -> Option<(Range<u16>, Range<u16>)> {
     match cmp {
         // (50..100), < 10
         // will never match, return empty ranges

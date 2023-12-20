@@ -6,28 +6,29 @@ use std::{
 
 const INPUT: &str = include_str!("inputs/20.txt");
 
-struct Circuit<'a> {
-    map: FxHashMap<&'a str, Module<'a>>,
-    signals: RefCell<VecDeque<(&'a str, &'a str, bool)>>,
+type ModuleKey = u16;
+
+struct Circuit {
+    map: FxHashMap<ModuleKey, Module>,
+    signals: RefCell<VecDeque<(ModuleKey, ModuleKey, bool)>>,
 }
 
-impl<'a> Circuit<'a> {
-    pub fn get(&self, name: &'a str) -> &Module<'a> {
+impl Circuit {
+    pub fn get(&self, name: ModuleKey) -> &Module {
         self.map.get(&name).unwrap()
     }
 
-    pub fn send_signal(&self, from: &'a str, to: &'a str, signal: bool) {
+    pub fn send_signal(&self, from: ModuleKey, to: ModuleKey, signal: bool) {
         self.signals.borrow_mut().push_back((from, to, signal));
     }
 
-    pub fn process<F: FnMut(&'a str, &'a str, bool)>(&self, mut f: F) {
+    pub fn process<F: FnMut(ModuleKey, ModuleKey, bool)>(&self, mut f: F) {
         loop {
             let Some((from, to, signal)) = self.signals.borrow_mut().pop_front() else {
                 break;
             };
             f(from, to, signal);
             let mut pending = VecDeque::with_capacity(1);
-            //println!("handling {from} -> {to} ({signal})");
             let to = self.get(to);
             match &to.kind {
                 ModuleKind::FlipFlop { .. } if signal => {}
@@ -44,7 +45,7 @@ impl<'a> Circuit<'a> {
                     pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
                 }
                 ModuleKind::Conjunction { ref memory } => {
-                    memory.borrow()[from].set(signal);
+                    memory.borrow()[&from].set(signal);
                     if memory.borrow().values().all(|v| v.get()) {
                         pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
                     } else {
@@ -63,48 +64,66 @@ impl<'a> Circuit<'a> {
 }
 
 #[derive(Debug)]
-struct Module<'a> {
-    kind: ModuleKind<'a>,
-    name: &'a str,
-    targets: Vec<&'a str>,
+struct Module {
+    kind: ModuleKind,
+    name: ModuleKey,
+    targets: Vec<ModuleKey>,
 }
 
 #[derive(Debug)]
-enum ModuleKind<'a> {
+enum ModuleKind {
     Broadcaster,
     FlipFlop {
         on: Cell<bool>,
     },
     // Map of input modules to their most recent signal
     Conjunction {
-        memory: RefCell<FxHashMap<&'a str, Cell<bool>>>,
+        memory: RefCell<FxHashMap<ModuleKey, Cell<bool>>>,
     },
     None {
         pressed: Cell<bool>,
     },
 }
 
-fn parse_line(input: &str) -> Module<'_> {
+const fn name_to_key(name: &str) -> ModuleKey {
+    match name.as_bytes() {
+        &[hi, lo] => u16::from_be_bytes([hi, lo]),
+
+        #[cfg(debug_assertions)]
+        b"broadcaster" => BROADCASTER,
+        #[cfg(debug_assertions)]
+        _ => unreachable!(),
+
+        #[cfg(not(debug_assertions))]
+        _ => BROADCASTER,
+    }
+}
+
+fn parse_line(input: &str) -> Module {
     let (name, stuff) = input.split_once(" -> ").unwrap();
-    let targets = stuff.split(", ").filter(|s| !s.is_empty()).collect();
+    let targets = stuff
+        .split(", ")
+        .filter(|s| !s.is_empty())
+        .map(name_to_key)
+        .collect();
 
     let (kind, name) = if let ("%", name) = name.split_at(1) {
         (
             ModuleKind::FlipFlop {
                 on: Cell::new(false),
             },
-            name,
+            name_to_key(name),
         )
     } else if let ("&", name) = name.split_at(1) {
         (
             ModuleKind::Conjunction {
                 memory: RefCell::new(FxHashMap::default()),
             },
-            name,
+            name_to_key(name),
         )
     } else {
         debug_assert_eq!(name, "broadcaster");
-        (ModuleKind::Broadcaster, "broadcaster")
+        (ModuleKind::Broadcaster, BROADCASTER)
     };
     Module {
         kind,
@@ -113,23 +132,25 @@ fn parse_line(input: &str) -> Module<'_> {
     }
 }
 
-fn make_map(input: &str) -> Circuit<'_> {
+const RX: ModuleKey = name_to_key("rx");
+
+fn make_map(input: &str) -> Circuit {
     let mut map: FxHashMap<_, _> = input
         .lines()
         .map(parse_line)
         .map(|module| (module.name, module))
         .chain(std::iter::once((
-            "rx",
+            RX,
             Module {
                 kind: ModuleKind::None {
                     pressed: Cell::new(false),
                 },
-                name: "rx",
+                name: RX,
                 targets: vec![],
             },
         )))
         .collect();
-    for (name, module) in map.iter() {
+    for (&name, module) in map.iter() {
         for tgt in module.targets.iter() {
             if let Some(tgt) = map.get(tgt) {
                 if let ModuleKind::Conjunction { memory } = &tgt.kind {
@@ -144,14 +165,17 @@ fn make_map(input: &str) -> Circuit<'_> {
     }
 }
 
+const BTN: ModuleKey = ModuleKey::MAX - 1;
+const BROADCASTER: ModuleKey = ModuleKey::MAX;
+
 pub fn part1() -> usize {
     let circuit = make_map(INPUT);
     let mut lo_count = 0;
     let mut hi_count = 0;
-    let broadcast = circuit.get("broadcaster");
+    let broadcast = circuit.get(BROADCASTER);
     for _ in 0..1000 {
         // lo_count += 1;
-        circuit.send_signal("btn", "broadcaster", false);
+        circuit.send_signal(BTN, BROADCASTER, false);
         circuit.process(|_, _, signal| {
             if signal {
                 hi_count += 1;
@@ -185,7 +209,7 @@ pub fn part2() -> usize {
     let before_rx = circuit
         .map
         .values()
-        .find(|module| module.targets.contains(&"rx"))
+        .find(|module| module.targets.contains(&RX))
         .unwrap();
     let ModuleKind::Conjunction { memory } = &before_rx.kind else {
         unreachable!()
@@ -202,10 +226,10 @@ pub fn part2() -> usize {
 
     while cycle_count < before_before_rx.len() {
         i += 1;
-        circuit.send_signal("btn", "broadcaster", false);
+        circuit.send_signal(BTN, BROADCASTER, false);
         circuit.process(|from, to, signal| {
             if signal && to == before_rx.name {
-                let entry = &before_before_rx[from];
+                let entry = &before_before_rx[&from];
                 if entry.set(i).is_ok() {
                     cycle_count += 1;
                 }

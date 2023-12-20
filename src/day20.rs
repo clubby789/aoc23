@@ -9,13 +9,13 @@ const INPUT: &str = include_str!("inputs/20.txt");
 type ModuleKey = u16;
 
 struct Circuit {
-    map: Box<[Module; u16::MAX as usize + 1]>,
+    map: Box<[Option<Module>; u16::MAX as usize + 1]>,
     signals: RefCell<VecDeque<(ModuleKey, ModuleKey, bool)>>,
 }
 
 impl Circuit {
-    pub fn get(&self, name: ModuleKey) -> &Module {
-        &self.map[name as usize]
+    pub fn get(&self, name: ModuleKey) -> Option<&Module> {
+        self.map[name as usize].as_ref()
     }
 
     pub fn send_signal(&self, from: ModuleKey, to: ModuleKey, signal: bool) {
@@ -23,38 +23,37 @@ impl Circuit {
     }
 
     pub fn process<F: FnMut(ModuleKey, ModuleKey, bool)>(&self, mut f: F) {
+        let mut longest = 0;
         loop {
             let Some((from, to, signal)) = self.signals.borrow_mut().pop_front() else {
                 break;
             };
+            longest = longest.max(self.signals.borrow().len());
             f(from, to, signal);
             let mut pending = VecDeque::with_capacity(1);
-            let to = self.get(to);
-            match &to.kind {
-                ModuleKind::FlipFlop { .. } if signal => {}
-                ModuleKind::FlipFlop { ref on } => {
+            match self.get(to).map(|m| (m, &m.kind)) {
+                None => {
+                    debug_assert_eq!(to, RX);
+                }
+                Some((_, ModuleKind::FlipFlop { .. })) if signal => {}
+                Some((to, ModuleKind::FlipFlop { ref on })) => {
                     if on.get() {
                         on.set(false);
-                        pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
+                        pending.extend(to.targets.iter().map(|t: &u16| (to.name, *t, false)));
                     } else {
                         on.set(true);
                         pending.extend(to.targets.iter().map(|t| (to.name, *t, true)));
                     }
                 }
-                ModuleKind::Broadcaster => {
+                Some((to, ModuleKind::Broadcaster)) => {
                     pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
                 }
-                ModuleKind::Conjunction { ref memory } => {
+                Some((to, ModuleKind::Conjunction { ref memory })) => {
                     memory.borrow()[&from].set(signal);
                     if memory.borrow().values().all(|v| v.get()) {
                         pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
                     } else {
                         pending.extend(to.targets.iter().map(|t| (to.name, *t, true)));
-                    }
-                }
-                ModuleKind::None { ref pressed } => {
-                    if !signal {
-                        pressed.set(true);
                     }
                 }
             }
@@ -66,7 +65,13 @@ impl Circuit {
         self.map
             .iter()
             .enumerate()
-            .filter(|(i, module)| *i as ModuleKey == module.name)
+            .filter_map(|(i, module)| {
+                if let Some(m) = module {
+                    Some((i, m))
+                } else {
+                    None
+                }
+            })
             .take(100)
             .map(|(i, md)| (i as u16, md))
     }
@@ -88,9 +93,6 @@ enum ModuleKind {
     // Map of input modules to their most recent signal
     Conjunction {
         memory: RefCell<FxHashMap<ModuleKey, Cell<bool>>>,
-    },
-    None {
-        pressed: Cell<bool>,
     },
 }
 
@@ -143,30 +145,30 @@ fn parse_line(input: &str) -> Module {
 
 const RX: ModuleKey = name_to_key("rx");
 
-const EMPTY: Module = Module {
-    name: 0,
-    kind: ModuleKind::None {
-        pressed: Cell::new(false),
-    },
-    targets: Vec::new(),
-};
+const EMPTY: Option<Module> = None;
 
 fn make_map(input: &str) -> Circuit {
     let mut map = Box::new([EMPTY; u16::MAX as usize + 1]);
     for line in input.lines() {
         let module = parse_line(line);
         let name = module.name;
-        map[name as usize] = module;
+        map[name as usize] = Some(module);
     }
 
     for (name, module) in map
         .iter()
         .enumerate()
-        .filter(|(i, module)| *i as ModuleKey == module.name)
+        .filter_map(|(i, module)| {
+            if let Some(m) = module {
+                Some((i, m))
+            } else {
+                None
+            }
+        })
         .take(100)
     {
         for tgt in module.targets.iter() {
-            if let Some(tgt) = map.get(*tgt as usize) {
+            if let Some(Some(tgt)) = map.get(*tgt as usize) {
                 if let ModuleKind::Conjunction { memory } = &tgt.kind {
                     memory
                         .borrow_mut()
@@ -177,7 +179,7 @@ fn make_map(input: &str) -> Circuit {
     }
     Circuit {
         map,
-        signals: RefCell::new(VecDeque::with_capacity(8)),
+        signals: RefCell::new(VecDeque::with_capacity(32)),
     }
 }
 

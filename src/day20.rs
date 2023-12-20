@@ -9,13 +9,13 @@ const INPUT: &str = include_str!("inputs/20.txt");
 type ModuleKey = u16;
 
 struct Circuit {
-    map: FxHashMap<ModuleKey, Module>,
+    map: Box<[Module; u16::MAX as usize + 1]>,
     signals: RefCell<VecDeque<(ModuleKey, ModuleKey, bool)>>,
 }
 
 impl Circuit {
     pub fn get(&self, name: ModuleKey) -> &Module {
-        self.map.get(&name).unwrap()
+        &self.map[name as usize]
     }
 
     pub fn send_signal(&self, from: ModuleKey, to: ModuleKey, signal: bool) {
@@ -60,6 +60,15 @@ impl Circuit {
             }
             self.signals.borrow_mut().append(&mut pending);
         }
+    }
+
+    pub fn iter(&self) -> impl Iterator<Item = (u16, &Module)> {
+        self.map
+            .iter()
+            .enumerate()
+            .filter(|(i, module)| *i as ModuleKey == module.name)
+            .take(100)
+            .map(|(i, md)| (i as u16, md))
     }
 }
 
@@ -134,27 +143,34 @@ fn parse_line(input: &str) -> Module {
 
 const RX: ModuleKey = name_to_key("rx");
 
+const EMPTY: Module = Module {
+    name: 0,
+    kind: ModuleKind::None {
+        pressed: Cell::new(false),
+    },
+    targets: Vec::new(),
+};
+
 fn make_map(input: &str) -> Circuit {
-    let mut map: FxHashMap<_, _> = input
-        .lines()
-        .map(parse_line)
-        .map(|module| (module.name, module))
-        .chain(std::iter::once((
-            RX,
-            Module {
-                kind: ModuleKind::None {
-                    pressed: Cell::new(false),
-                },
-                name: RX,
-                targets: vec![],
-            },
-        )))
-        .collect();
-    for (&name, module) in map.iter() {
+    let mut map = Box::new([EMPTY; u16::MAX as usize + 1]);
+    for line in input.lines() {
+        let module = parse_line(line);
+        let name = module.name;
+        map[name as usize] = module;
+    }
+
+    for (name, module) in map
+        .iter()
+        .enumerate()
+        .filter(|(i, module)| *i as ModuleKey == module.name)
+        .take(100)
+    {
         for tgt in module.targets.iter() {
-            if let Some(tgt) = map.get(tgt) {
+            if let Some(tgt) = map.get(*tgt as usize) {
                 if let ModuleKind::Conjunction { memory } = &tgt.kind {
-                    memory.borrow_mut().insert(name, Cell::new(false));
+                    memory
+                        .borrow_mut()
+                        .insert(name as ModuleKey, Cell::new(false));
                 }
             }
         }
@@ -207,8 +223,8 @@ fn lcm(a: usize, b: usize) -> usize {
 pub fn part2() -> usize {
     let circuit = make_map(INPUT);
     let before_rx = circuit
-        .map
-        .values()
+        .iter()
+        .map(|(_, v)| v)
         .find(|module| module.targets.contains(&RX))
         .unwrap();
     let ModuleKind::Conjunction { memory } = &before_rx.kind else {

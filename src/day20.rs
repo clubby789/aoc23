@@ -30,7 +30,6 @@ impl Circuit {
             };
             longest = longest.max(self.signals.borrow().len());
             f(from, to, signal);
-            let mut pending = VecDeque::with_capacity(1);
             match self.get(to).map(|m| (m, &m.kind)) {
                 None => {
                     debug_assert_eq!(to, RX);
@@ -39,25 +38,34 @@ impl Circuit {
                 Some((to, ModuleKind::FlipFlop { ref on })) => {
                     if on.get() {
                         on.set(false);
-                        pending.extend(to.targets.iter().map(|t: &u16| (to.name, *t, false)));
+                        self.signals
+                            .borrow_mut()
+                            .extend(to.targets.iter().map(|t: &u16| (to.name, *t, false)));
                     } else {
                         on.set(true);
-                        pending.extend(to.targets.iter().map(|t| (to.name, *t, true)));
+                        self.signals
+                            .borrow_mut()
+                            .extend(to.targets.iter().map(|t| (to.name, *t, true)));
                     }
                 }
                 Some((to, ModuleKind::Broadcaster)) => {
-                    pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
+                    self.signals
+                        .borrow_mut()
+                        .extend(to.targets.iter().map(|t| (to.name, *t, false)));
                 }
                 Some((to, ModuleKind::Conjunction { ref memory })) => {
                     memory.borrow()[&from].set(signal);
                     if memory.borrow().values().all(|v| v.get()) {
-                        pending.extend(to.targets.iter().map(|t| (to.name, *t, false)));
+                        self.signals
+                            .borrow_mut()
+                            .extend(to.targets.iter().map(|t| (to.name, *t, false)));
                     } else {
-                        pending.extend(to.targets.iter().map(|t| (to.name, *t, true)));
+                        self.signals
+                            .borrow_mut()
+                            .extend(to.targets.iter().map(|t| (to.name, *t, true)));
                     }
                 }
             }
-            self.signals.borrow_mut().append(&mut pending);
         }
     }
 

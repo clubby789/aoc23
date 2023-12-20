@@ -54,8 +54,14 @@ impl Circuit {
                         .extend(to.targets.iter().map(|t| (to.name, *t, false)));
                 }
                 Some((to, ModuleKind::Conjunction { ref memory })) => {
-                    memory.borrow()[&from].set(signal);
-                    if memory.borrow().values().all(|v| v.get()) {
+                    memory
+                        .borrow()
+                        .iter()
+                        .find(|(k, _)| *k == from)
+                        .unwrap()
+                        .1
+                        .set(signal);
+                    if memory.borrow().iter().all(|v| v.1.get()) {
                         self.signals
                             .borrow_mut()
                             .extend(to.targets.iter().map(|t| (to.name, *t, false)));
@@ -100,7 +106,7 @@ enum ModuleKind {
     },
     // Map of input modules to their most recent signal
     Conjunction {
-        memory: RefCell<FxHashMap<ModuleKey, Cell<bool>>>,
+        memory: RefCell<Vec<(ModuleKey, Cell<bool>)>>,
     },
 }
 
@@ -136,7 +142,7 @@ fn parse_line(input: &str) -> Module {
     } else if let ("&", name) = name.split_at(1) {
         (
             ModuleKind::Conjunction {
-                memory: RefCell::new(FxHashMap::default()),
+                memory: RefCell::new(Vec::with_capacity(4)),
             },
             name_to_key(name),
         )
@@ -180,7 +186,7 @@ fn make_map(input: &str) -> Circuit {
                 if let ModuleKind::Conjunction { memory } = &tgt.kind {
                     memory
                         .borrow_mut()
-                        .insert(name as ModuleKey, Cell::new(false));
+                        .push((name as ModuleKey, Cell::new(false)));
                 }
             }
         }
@@ -243,8 +249,8 @@ pub fn part2() -> usize {
 
     let before_before_rx: FxHashMap<_, _> = memory
         .borrow()
-        .keys()
-        .map(|k| (*k, OnceCell::new()))
+        .iter()
+        .map(|k| (k.0, OnceCell::new()))
         .collect();
 
     let mut cycle_count = 0;

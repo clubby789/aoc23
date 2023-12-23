@@ -41,7 +41,7 @@ pub fn part1() -> usize {
     let mut parts = INPUT.split("\n\n");
     let seeds = parts.next().unwrap().split_once(": ").unwrap().1;
     let mut numbers: Vec<usize> = seeds.split(' ').map(|s| s.parse().unwrap()).collect();
-    while let Some(part) = parts.next() {
+    for part in parts {
         let mut new_numbers = vec![None; numbers.len()];
         let mut mappings = part.lines().skip(1);
         for m in mappings {
@@ -55,13 +55,11 @@ pub fn part1() -> usize {
             }
         }
         // replace any mapped numbers
-        for (n, nn) in numbers.iter_mut().zip(&new_numbers).filter_map(|(n, nn)| {
-            if let Some(nn) = nn {
-                Some((n, nn))
-            } else {
-                None
-            }
-        }) {
+        for (n, nn) in numbers
+            .iter_mut()
+            .zip(&new_numbers)
+            .filter_map(|(n, nn)| nn.as_ref().map(|nn| (n, nn)))
+        {
             *n = *nn;
         }
     }
@@ -107,7 +105,7 @@ pub fn part2() -> usize {
         ranges.push(Mapped::No(Range::new(lo, lo + len)));
     }
 
-    while let Some(part) = parts.next() {
+    for part in parts {
         let (_, mappings) = part.split_once('\n').unwrap();
         for m in mappings.lines() {
             let mut parts = m.split(' ').map(|n| n.parse::<usize>().unwrap());

@@ -85,7 +85,7 @@ fn parse_part2(input: &str) -> (u64, u64) {
                 break;
             }
             n => {
-                debug_assert!(matches!(n, b'0'..=b'9'));
+                debug_assert!(n.is_ascii_digit());
                 time = time * 10 + (n & 0xf) as u64;
             }
         }
@@ -98,7 +98,7 @@ fn parse_part2(input: &str) -> (u64, u64) {
         if n == b' ' {
             continue;
         }
-        debug_assert!(matches!(n, b'0'..=b'9'), "'{}'", n as char);
+        debug_assert!(n.is_ascii_digit(), "'{}'", n as char);
         distance = distance * 10 + (n & 0xf) as u64;
     }
 

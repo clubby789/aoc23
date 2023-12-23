@@ -39,7 +39,7 @@ pub fn part1() -> usize {
     let nodes = make_map(nodes);
     let mut cur = AAA;
     let mut iter = directions.bytes().cycle().enumerate();
-    while let Some((_, dir)) = iter.next() {
+    for (_, dir) in iter.by_ref() {
         let node = nodes[cur as usize];
         if dir == b'L' {
             cur = node.0
@@ -81,7 +81,7 @@ pub fn part2() -> usize {
     let mut running_lcm = 1;
 
     let mut iter = directions.bytes().cycle().enumerate();
-    while let Some((i, dir)) = iter.next() {
+    for (i, dir) in iter {
         if cur.is_empty() {
             break;
         }

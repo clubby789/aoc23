@@ -76,9 +76,9 @@ fn parse(input: &str) -> Vec<Brick> {
     INPUT
         .lines()
         .map(|l| {
-            let (a, b) = l.split_once("~").unwrap();
-            let mut a = a.split(",").map(|n| n.parse().unwrap());
-            let mut b = b.split(",").map(|n| n.parse().unwrap());
+            let (a, b) = l.split_once('~').unwrap();
+            let mut a = a.split(',').map(|n| n.parse().unwrap());
+            let mut b = b.split(',').map(|n| n.parse().unwrap());
             Brick(
                 Pos {
                     x: a.next().unwrap(),

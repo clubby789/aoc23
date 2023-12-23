@@ -27,9 +27,11 @@ where
     (avg, ret)
 }
 
+type AocFn = fn() -> usize;
+
 seq! {
     N in 1..=23 {
-        static FUNCS: &[(fn() -> usize, fn() -> usize)] = &[
+        static FUNCS: &[(AocFn, AocFn)] = &[
             #(
                 (day~N::part1 as _, day~N::part2 as _),
             )*

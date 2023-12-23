@@ -197,10 +197,8 @@ pub fn part2() -> usize {
                     (b'-', _) => state,
                     _ => unreachable!("'{}', {:?}, {:?}", cell as char, state, (x, y)),
                 };
-            } else {
-                if state == State::Inside {
-                    count += 1;
-                }
+            } else if state == State::Inside {
+                count += 1;
             }
         }
     }

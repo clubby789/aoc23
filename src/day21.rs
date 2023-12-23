@@ -10,7 +10,7 @@ struct Pos(usize, u32);
 const N_STEPS: u32 = 64;
 
 impl Pos {
-    pub fn successors<'a>(self, grid: &'a [u8], width: usize) -> impl Iterator<Item = Self> + 'a {
+    pub fn successors(self, grid: &[u8], width: usize) -> impl Iterator<Item = Self> + '_ {
         let w = width as isize;
         [-1, 1, -w, w].into_iter().filter_map(move |diff| {
             let pos = self.0.checked_add_signed(diff)?;

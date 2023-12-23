@@ -4,7 +4,7 @@ pub fn part1() -> usize {
     INPUT
         .lines()
         .map(|l| {
-            let nums: Vec<isize> = l.split(" ").map(|n| n.parse().ok().unwrap()).collect();
+            let nums: Vec<isize> = l.split(' ').map(|n| n.parse().ok().unwrap()).collect();
             let mut diffs: Vec<Vec<isize>> = vec![nums.windows(2).map(|w| w[1] - w[0]).collect()];
 
             loop {
@@ -30,7 +30,7 @@ pub fn part2() -> usize {
     INPUT
         .lines()
         .map(|l| {
-            let nums: Vec<isize> = l.split(" ").map(|n| n.parse().ok().unwrap()).collect();
+            let nums: Vec<isize> = l.split(' ').map(|n| n.parse().ok().unwrap()).collect();
             let mut diffs: Vec<Vec<isize>> = vec![nums.windows(2).map(|w| w[1] - w[0]).collect()];
 
             loop {

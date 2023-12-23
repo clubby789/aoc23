@@ -26,18 +26,18 @@ pub fn part2() -> usize {
     INPUT
         .lines()
         .map(|l| {
-            let matcher = |window: &[u8]| match window {
-                &[n, ..] if n.is_ascii_digit() => Some((n - b'0') as usize),
-                &[b'o', b'n', b'e', ..] => Some(1),
-                &[b't', b'w', b'o', ..] => Some(2),
-                &[b't', b'h', b'r', b'e', b'e', ..] => Some(3),
-                &[b'f', b'o', b'u', b'r', ..] => Some(4),
-                &[b'f', b'i', b'v', b'e', ..] => Some(5),
-                &[b's', b'i', b'x', ..] => Some(6),
-                &[b's', b'e', b'v', b'e', b'n', ..] => Some(7),
-                &[b'e', b'i', b'g', b'h', b't', ..] => Some(8),
-                &[b'n', b'i', b'n', b'e', ..] => Some(9),
-                &[_, _, _, _, _, _, ..] => unreachable!(),
+            let matcher = |window: &[u8]| match *window {
+                [n, ..] if n.is_ascii_digit() => Some((n - b'0') as usize),
+                [b'o', b'n', b'e', ..] => Some(1),
+                [b't', b'w', b'o', ..] => Some(2),
+                [b't', b'h', b'r', b'e', b'e', ..] => Some(3),
+                [b'f', b'o', b'u', b'r', ..] => Some(4),
+                [b'f', b'i', b'v', b'e', ..] => Some(5),
+                [b's', b'i', b'x', ..] => Some(6),
+                [b's', b'e', b'v', b'e', b'n', ..] => Some(7),
+                [b'e', b'i', b'g', b'h', b't', ..] => Some(8),
+                [b'n', b'i', b'n', b'e', ..] => Some(9),
+                [_, _, _, _, _, _, ..] => unreachable!(),
                 _ => None,
             };
             let hi = WindowsUpto::new(l.as_bytes(), 5).find_map(matcher).unwrap();

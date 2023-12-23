@@ -79,13 +79,7 @@ impl Circuit {
         self.map
             .iter()
             .enumerate()
-            .filter_map(|(i, module)| {
-                if let Some(m) = module {
-                    Some((i, m))
-                } else {
-                    None
-                }
-            })
+            .filter_map(|(i, module)| module.as_ref().map(|m| (i, m)))
             .take(100)
             .map(|(i, md)| (i as u16, md))
     }
@@ -172,13 +166,7 @@ fn make_map(input: &str) -> Circuit {
     for (name, module) in map
         .iter()
         .enumerate()
-        .filter_map(|(i, module)| {
-            if let Some(m) = module {
-                Some((i, m))
-            } else {
-                None
-            }
-        })
+        .filter_map(|(i, module)| module.as_ref().map(|m| (i, m)))
         .take(100)
     {
         for tgt in module.targets.iter() {

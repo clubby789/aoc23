@@ -94,7 +94,7 @@ fn solve(grid: &Grid, mut pos: Pos, mut dir: Direction) -> usize {
             }
             _ => unreachable!("{pos:?}, '{}'", cell.escape_ascii()),
         };
-        if let Some(npos) = next_pos(pos, dir, &grid) {
+        if let Some(npos) = next_pos(pos, dir, grid) {
             pos = npos;
         } else if let Some((npos, ndir)) = points_todo.pop() {
             pos = npos;

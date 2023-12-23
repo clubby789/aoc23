@@ -7,12 +7,12 @@ fn hash_string(s: &str) -> usize {
 }
 
 pub fn part1() -> usize {
-    INPUT.split(",").map(hash_string).sum()
+    INPUT.split(',').map(hash_string).sum()
 }
 
 pub fn part2() -> usize {
     let mut map: [_; 256] = std::array::from_fn(|_| Vec::<(&str, u8)>::new());
-    for operation in INPUT.split(",") {
+    for operation in INPUT.split(',') {
         if let Some((lbl, num)) = operation.split_once('=') {
             let idx = hash_string(lbl);
             let num = num.parse::<u8>().unwrap();

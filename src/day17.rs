@@ -184,7 +184,7 @@ impl<'a> Grid<'a> {
 
     pub fn get(&self, x: usize, y: usize) -> Option<usize> {
         if let Some(val) = self.src.get(y * (self.width + 1) + x) {
-            debug_assert!(matches!(*val, b'0'..=b'9'));
+            debug_assert!((*val).is_ascii_digit());
             Some((*val & 0b1111) as usize)
         } else {
             None

@@ -4,7 +4,7 @@ fn parse_two_byte_num(hi: u8, lo: u8) -> u8 {
     // correct as long as hi and lo are ASCII digits
     // or a space
     debug_assert!(matches!(hi, b' ' | b'1'..=b'9'), "'{}'", hi as char);
-    debug_assert!(matches!(lo, b'0'..=b'9'), "'{}'", lo as char);
+    debug_assert!(lo.is_ascii_digit(), "'{}'", lo as char);
     (hi & 0xf) * 10 + (lo & 0xf)
 }
 
@@ -31,7 +31,7 @@ fn matches_for_card(skip: usize, card: &[u8]) -> usize {
 }
 
 pub fn part1() -> usize {
-    let skip = std::hint::black_box(INPUT).find(":").unwrap() + 2;
+    let skip = std::hint::black_box(INPUT).find(':').unwrap() + 2;
     let line_length = std::hint::black_box(INPUT).find('\n').unwrap() + 1;
     INPUT
         .as_bytes()
@@ -48,7 +48,7 @@ pub fn part1() -> usize {
 }
 
 pub fn part2() -> usize {
-    let skip = std::hint::black_box(INPUT).find(":").unwrap() + 2;
+    let skip = std::hint::black_box(INPUT).find(':').unwrap() + 2;
     let line_length = std::hint::black_box(INPUT).find('\n').unwrap() + 1;
     let mut amounts_per_card = [1; 256];
 

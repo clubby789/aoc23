@@ -66,7 +66,7 @@ fn parse_workflow(input: &str) -> (&str, Workflow<'_>) {
     let (name, rest) = input.split_once('{').unwrap();
     let rest = rest.strip_suffix('}').unwrap();
     let rules = rest
-        .split(",")
+        .split(',')
         .map(|step| {
             if let Some((check, dest)) = step.split_once(':') {
                 let [prop, cmp, value @ ..] = check.as_bytes() else {
@@ -107,7 +107,7 @@ fn parse_workflow(input: &str) -> (&str, Workflow<'_>) {
 
 fn parse_part(input: &str) -> Part {
     let line = input.strip_prefix('{').unwrap().strip_suffix('}').unwrap();
-    let mut iter = line.split(",").map(|c| c.split_once('=').unwrap().1);
+    let mut iter = line.split(',').map(|c| c.split_once('=').unwrap().1);
     Part {
         x: iter.next().unwrap().parse().unwrap(),
         m: iter.next().unwrap().parse().unwrap(),
@@ -145,8 +145,8 @@ pub fn part1() -> usize {
             let mut cur = WorkflowDest::Workflow("in");
             while let WorkflowDest::Workflow(name) = cur {
                 for step in &workflows[&name].rules {
-                    match step {
-                        &WorkflowStep::Part {
+                    match *step {
+                        WorkflowStep::Part {
                             prop,
                             cmp,
                             value,
@@ -157,7 +157,7 @@ pub fn part1() -> usize {
                                 break;
                             }
                         }
-                        &WorkflowStep::Final(dest) => {
+                        WorkflowStep::Final(dest) => {
                             cur = dest;
                             break;
                         }

@@ -5,7 +5,7 @@ fn solve_points(path: impl Iterator<Item = (i64, i64)>) -> usize {
     let mut area = 0;
     let mut points_on_path = 0;
     let mut prev = path.next().unwrap();
-    while let Some(cur) = path.next() {
+    for cur in path {
         points_on_path += {
             #[inline(always)]
             fn branchless_abs(a: i64) -> i64 {
@@ -66,9 +66,9 @@ where
 
 pub fn part1() -> usize {
     let trench = Trench::new(INPUT, |line, last| {
-        let (direction, amnt, length) = match line {
-            &[dir, _, amnt, b' ', ..] => (dir, (amnt & 0b1111) as i64, 14),
-            &[dir, _, hi, lo, ..] => (dir, ((hi & 0b1111) * 10 + (lo & 0b1111)) as i64, 15),
+        let (direction, amnt, length) = match *line {
+            [dir, _, amnt, b' ', ..] => (dir, (amnt & 0b1111) as i64, 14),
+            [dir, _, hi, lo, ..] => (dir, ((hi & 0b1111) * 10 + (lo & 0b1111)) as i64, 15),
             _ => unreachable!(),
         };
         let diff = match direction {
@@ -128,16 +128,16 @@ pub fn part2() -> usize {
                 table[b'f' as usize] = 15 << 4;
                 table
             };
-            let amnt = (HEX_TABLE_LO[amnt[0] as usize] as i64) << 4 * 4
-                | (HEX_TABLE_HI[amnt[1] as usize] as i64) << 4 * 2
-                | (HEX_TABLE_LO[amnt[2] as usize] as i64) << 4 * 2
+            let amnt = (HEX_TABLE_LO[amnt[0] as usize] as i64) << (4 * 4)
+                | (HEX_TABLE_HI[amnt[1] as usize] as i64) << (4 * 2)
+                | (HEX_TABLE_LO[amnt[2] as usize] as i64) << (4 * 2)
                 | (HEX_TABLE_HI[amnt[3] as usize] as i64)
                 | HEX_TABLE_LO[amnt[4] as usize] as i64;
             (dir, amnt)
         }
-        let ((direction, amnt), len) = match line {
-            &[_, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => (parse_hex(dir, [a, b, c, d, e]), 14),
-            &[_, _, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
+        let ((direction, amnt), len) = match *line {
+            [_, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => (parse_hex(dir, [a, b, c, d, e]), 14),
+            [_, _, _, _, b' ', _, _, a, b, c, d, e, dir, ..] => {
                 (parse_hex(dir, [a, b, c, d, e]), 15)
             }
             _ => unreachable!(),

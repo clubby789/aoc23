@@ -170,13 +170,11 @@ fn parse(input: &str) -> Vec<Brick> {
         .collect()
 }
 
-pub fn part1() -> usize {
-    let mut bricks = parse(INPUT);
+fn simulate_bricks(mut bricks: Vec<Brick>) -> Vec<Brick> {
     bricks.sort_unstable_by_key(|b| {
         debug_assert!(b.0 <= b.1, "{b:?}");
         b.0.z
     });
-
     #[derive(Clone, PartialEq, Eq)]
     struct FallingBrick {
         brick: Cell<Brick>,
@@ -226,54 +224,88 @@ pub fn part1() -> usize {
     }
 
     while do_fall(&bricks) {}
+    bricks.into_iter().map(|fb| fb.brick()).collect()
+}
+
+fn build_support_maps(bricks: &[Brick]) -> (Vec<Vec<usize>>, Vec<Vec<usize>>) {
+    // TODO: use iterator::unzip
+    let support_map = bricks
+        .iter()
+        .map(|b| {
+            let mut supporting = vec![];
+            for (i, b2) in bricks.iter().enumerate() {
+                if b.supports(&b2) {
+                    supporting.push(i);
+                }
+            }
+            supporting
+        })
+        .collect::<Vec<_>>();
+
+    // map of bricks to everything they're supported by
+    let supported_by_map = bricks
+        .iter()
+        .map(|b| {
+            let mut supported_by = vec![];
+            for (i, b2) in bricks.iter().enumerate() {
+                if b2.supports(&b) {
+                    supported_by.push(i);
+                }
+            }
+            supported_by
+        })
+        .collect::<Vec<_>>();
+    (support_map, supported_by_map)
+}
+
+pub fn part1() -> usize {
+    let bricks = parse(INPUT);
+    let bricks = simulate_bricks(bricks);
+
+    let (support_map, supported_by_map) = build_support_maps(&bricks);
+
     let mut count = 0;
 
-    // for each brick b
-    'bricks: for (i, b) in bricks.iter().enumerate() {
-        let b = b.brick();
-        // find all the bricks b supports
-        let supported_by_b: Vec<_> = bricks
+    for i in 0..bricks.len() {
+        let supporting = &support_map[i];
+        if supporting
             .iter()
-            .filter_map(|fb| {
-                let fb = fb.brick();
-                if b.supports(&fb) {
-                    Some(fb)
-                } else {
-                    None
-                }
-            })
-            .collect();
-        if supported_by_b.is_empty() {
-            // definitely safe
+            .all(|&sup| supported_by_map[sup].len() > 1)
+        {
             count += 1;
-            continue 'bricks;
         }
-        for supported in supported_by_b {
-            // find all the bricks supporting `supported`
-            let supporting_this: Vec<_> = bricks
-                .iter()
-                .filter_map(|fb| {
-                    let fb = fb.brick();
-                    if fb.supports(&supported) {
-                        Some(fb)
-                    } else {
-                        None
-                    }
-                })
-                .collect();
-            debug_assert_ne!(supporting_this.len(), 0);
-            if supporting_this.len() == 1 {
-                // this brick is ONLY being supported by b, so we can't remove this
-                continue 'bricks;
-            }
-        }
-        // all b's supported bricks have other supports, safe to remove
-        count += 1;
     }
 
     count
 }
 
 pub fn part2() -> usize {
-    0
+    let bricks = parse(INPUT);
+    let bricks = simulate_bricks(bricks);
+
+    let (support_map, supported_by_map) = build_support_maps(&bricks);
+
+    let mut total_fall = 0;
+    for i in 0..bricks.len() {
+        let mut fallen = FxHashSet::default();
+        // we pretend the removed brick has fallen, so we need to subtract 1 from the length at the end
+        fallen.insert(i);
+        let mut visit = support_map[i].clone();
+        while let Some(b) = visit.pop() {
+            // there are no bricks suporting this one that aren't destroyed or fallen
+            if supported_by_map[b]
+                .iter()
+                .filter(|&supporting_b| !fallen.contains(supporting_b))
+                .next()
+                .is_none()
+            {
+                fallen.insert(b);
+                visit.extend(&support_map[b]);
+            }
+        }
+        // println!("remove {i}, {fallen:?} fall");
+
+        total_fall += (fallen.len() - 1);
+    }
+    total_fall
 }

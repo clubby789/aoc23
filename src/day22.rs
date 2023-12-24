@@ -102,10 +102,7 @@ impl Brick {
         let other_y = (other.0.y..=other.1.y);
 
         fn range_overlap(r1: &RangeInclusive<u32>, r2: &RangeInclusive<u32>) -> bool {
-            r2.contains(r1.start())
-                || r2.contains(r1.end())
-                || r1.contains(&r2.start())
-                || r1.contains(&r2.end())
+            r1.start() <= r2.end() && r2.start() <= r1.end()
         }
 
         let r = match (self.orientation(), other.orientation()) {

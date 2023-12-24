@@ -175,56 +175,35 @@ fn simulate_bricks(mut bricks: Vec<Brick>) -> Vec<Brick> {
         debug_assert!(b.0 <= b.1, "{b:?}");
         b.0.z
     });
-    #[derive(Clone, PartialEq, Eq)]
-    struct FallingBrick {
-        brick: Cell<Brick>,
-        falling: Cell<bool>,
-    }
-    impl FallingBrick {
-        pub fn is_falling(&self) -> bool {
-            self.falling.get()
-        }
-        pub fn brick(&self) -> Brick {
-            self.brick.get()
-        }
-    }
 
-    let bricks: Vec<_> = bricks
-        .into_iter()
-        .map(|b| FallingBrick {
-            brick: Cell::new(b),
-            falling: Cell::new(true),
-        })
-        .collect();
-
-    fn do_fall(bricks: &[FallingBrick]) -> bool {
+    let mut fallen = Vec::with_capacity(bricks.len());
+    fn do_fall(bricks: &mut Vec<Brick>, fallen: &mut Vec<Brick>) {
         let mut any_fell = false;
-        for b in bricks.iter().filter(|b| b.is_falling()) {
-            let Some(below) = b.brick().drop() else {
-                b.falling.set(false);
-                continue;
+        for i in 0..bricks.len() {
+            let b = bricks[i];
+            let Some(below) = b.drop() else {
+                fallen.push(bricks.remove(i));
+                return;
             };
             // find other landed bricks
             let mut this_fell = true;
-            // let below_points = below.points().collect::<FxHashSet<_>>();
-            for b2 in bricks.iter().filter(|&b2| !b2.is_falling()) {
-                if b2.brick().supports(&b.brick()) {
+            for b2 in fallen.iter() {
+                if b2.supports(&b) {
                     this_fell = false;
-                    b.falling.set(false);
-
-                    break;
+                    fallen.push(bricks.remove(i));
+                    return;
                 }
             }
             if this_fell {
-                b.brick.set(below);
-                any_fell = true;
+                bricks[i] = below;
             }
         }
-        any_fell
     }
 
-    while do_fall(&bricks) {}
-    bricks.into_iter().map(|fb| fb.brick()).collect()
+    while !bricks.is_empty() {
+        do_fall(&mut bricks, &mut fallen)
+    }
+    fallen
 }
 
 fn build_support_maps(bricks: &[Brick]) -> (Vec<Vec<usize>>, Vec<Vec<usize>>) {

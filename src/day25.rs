@@ -90,29 +90,27 @@ impl Graph {
     /// Combine 'v2' into the node 'v1'
     /// This removes v2, and any edges to it will now link to v1
     pub fn contract(&mut self, v1: NodeName, v2: NodeName) {
-        let edge = Edge(v1, v2);
-        self.edges
-            .remove(self.edges.iter().position(|e| e == &edge).unwrap());
+        self.edges.remove(
+            self.edges
+                .iter()
+                .position(|&Edge(e1, e2)| e1 == v1 && e2 == v2)
+                .unwrap(),
+        );
         let Some(count) = self.vertices.remove(&v2) else {
             unreachable!()
         };
         *self.vertices.get_mut(&v1).unwrap() += count;
-        self.edges = self
-            .edges
-            .drain(..)
-            // Link v2's edges to v1
-            .map(|edge| {
-                if edge.0 == v2 {
-                    Edge(v1, edge.1)
-                } else if edge.1 == v2 {
-                    Edge(edge.0, v1)
-                } else {
-                    edge
-                }
-            })
-            // remove self-loops
-            .filter(|e| e.0 != e.1)
-            .collect();
+        for i in (0..self.edges.len()).rev() {
+            let edge = &mut self.edges[i];
+            if edge.0 == v2 {
+                edge.0 = v1;
+            } else if edge.1 == v2 {
+                edge.1 = v1;
+            }
+            if edge.0 == edge.1 {
+                self.edges.remove(i);
+            }
+        }
     }
 }
 

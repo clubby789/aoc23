@@ -52,34 +52,15 @@ fn get_rand_two(max: usize) -> (usize, usize) {
     (v1, v2)
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
 struct Edge(NodeName, NodeName);
 
-// TODO: normalize edges on input
 impl Edge {
     pub fn normalize(self) -> Self {
         let Self(from, to) = self;
         let mut edge = [from, to];
         edge.sort_unstable();
         Self(edge[0], edge[1])
-    }
-}
-
-impl PartialEq for Edge {
-    fn eq(&self, other: &Self) -> bool {
-        let slf = self.normalize();
-        let other = other.normalize();
-        slf.0 == other.0 && slf.1 == other.1
-    }
-}
-
-impl Eq for Edge {}
-
-impl std::hash::Hash for Edge {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        let slf = self.normalize();
-        state.write_u32(slf.0 .0);
-        state.write_u32(slf.1 .0);
     }
 }
 
@@ -100,7 +81,7 @@ impl Graph {
             vertices.insert(from, 1);
             for to in to.split_ascii_whitespace().map(NodeName::from_str) {
                 vertices.insert(to, 1);
-                edges.push(Edge(from, to));
+                edges.push(Edge(from, to).normalize());
             }
         }
         Self { vertices, edges }

@@ -85,7 +85,6 @@ pub fn part1() -> usize {
             let line_a_x = pos_a_x.to_real() + vel_a_x.to_real() * &time_a;
             let line_a_y = pos_a_y.to_real() + vel_a_y.to_real() * &time_a;
 
-
             let line_b_x = pos_b_x.to_real() + vel_b_x.to_real() * &time_b;
             let line_b_y = pos_b_y.to_real() + vel_b_y.to_real() * &time_b;
 
